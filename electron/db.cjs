@@ -25,7 +25,9 @@ db.exec(`
   create table if not exists sessions (
     id integer primary key autoincrement,
     started_at text not null default (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
-    ended_at text
+    ended_at text,
+    expected_standups integer not null default 0,
+    performed_standups integer not null default 0
   );
 
   create table if not exists posture_snapshots (
@@ -51,6 +53,8 @@ db.exec(`
     bad_posture_seconds integer not null default 0,
     habit_event_count integer not null default 0,
     stand_count integer not null default 0,
+    expected_standups integer not null default 0,
+    performed_standups integer not null default 0,
     streak_maintained integer not null default 0
   );
 `)
@@ -71,6 +75,10 @@ ensureColumn('profile', 'stand_goal', 'integer not null default 8')
 ensureColumn('profile', 'bad_habit_limit', 'integer not null default 5')
 ensureColumn('profile', 'streak_goal', 'integer not null default 7')
 ensureColumn('daily_summaries', 'stand_count', 'integer not null default 0')
+ensureColumn('sessions', 'expected_standups', 'integer not null default 0')
+ensureColumn('sessions', 'performed_standups', 'integer not null default 0')
+ensureColumn('daily_summaries', 'expected_standups', 'integer not null default 0')
+ensureColumn('daily_summaries', 'performed_standups', 'integer not null default 0')
 
 function todayLocal() {
   const now = new Date()
@@ -136,6 +144,34 @@ function endSession(sessionId) {
   db.prepare("update sessions set ended_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') where id = ?").run(
     sessionId,
   )
+}
+
+/** Called each time a stand alert popup is shown: how many standups the user should have performed. */
+function recordExpectedStandup(sessionId) {
+  db.prepare('update sessions set expected_standups = expected_standups + 1 where id = ?').run(sessionId)
+
+  const day = todayLocal()
+  db.prepare(
+    `insert into daily_summaries (day, expected_standups)
+     values (?, 1)
+     on conflict (day) do update set expected_standups = expected_standups + 1`,
+  ).run(day)
+}
+
+/** Called each time the vision model detects the user actually stood up/stepped away. */
+function recordPerformedStandup(sessionId) {
+  db.prepare('update sessions set performed_standups = performed_standups + 1 where id = ?').run(sessionId)
+
+  const day = todayLocal()
+  db.prepare(
+    `insert into daily_summaries (day, performed_standups)
+     values (?, 1)
+     on conflict (day) do update set performed_standups = performed_standups + 1`,
+  ).run(day)
+}
+
+function getSession(sessionId) {
+  return db.prepare('select * from sessions where id = ?').get(sessionId)
 }
 
 function recordPostureSnapshot({ sessionId, postureStatus, eyeStatus = 'unknown', sittingSeconds = 60 }) {
@@ -223,6 +259,8 @@ function getTodaySummary() {
       bad_posture_seconds: 0,
       habit_event_count: 0,
       stand_count: 0,
+      expected_standups: 0,
+      performed_standups: 0,
       streak_maintained: 0,
     }
   )
@@ -231,9 +269,12 @@ function getTodaySummary() {
 module.exports = {
   startSession,
   endSession,
+  getSession,
   recordPostureSnapshot,
   recordHabitEvent,
   recordStandupFollowed,
+  recordExpectedStandup,
+  recordPerformedStandup,
   getProfile,
   updateProfile,
   getDailySummaries,

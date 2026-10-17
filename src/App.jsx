@@ -3,6 +3,16 @@ import { Toaster } from 'sonner'
 import Monitor from './components/Monitor'
 import { getProfile, getTodaySummary, updateProfile } from './lib/db'
 import { onStatsChanged } from './lib/statsBus'
+import healthyPet from '../pet_imgs/healthy.png'
+import sadPet from '../pet_imgs/sad.png'
+import verySadPet from '../pet_imgs/verysad.png'
+
+/** Sea lion's mood worsens as bad habits pile up or standup alerts go unanswered. */
+function petImageFor({ badHabits, standupGap }) {
+  if (badHabits > 5 || standupGap > 5) return verySadPet
+  if (badHabits > 2 || standupGap > 3) return sadPet
+  return healthyPet
+}
 
 function StandAlert() {
   return (
@@ -167,11 +177,17 @@ function Dashboard() {
   const standPercent = clampPercent(today.stand_count, profile.stand_goal)
   const badHabitPercent = clampPercent(today.habit_event_count, profile.bad_habit_limit)
   const streakPercent = clampPercent(profile.current_streak, profile.streak_goal)
+  const standupGap = today.expected_standups - today.performed_standups
+  const petImage = petImageFor({ badHabits: today.habit_event_count, standupGap })
 
   return (
     <div className="flex min-h-full items-center justify-center bg-gray-50 p-6">
       <div className="w-full max-w-xl rounded-2xl border border-black/10 bg-white p-8 shadow-sm">
         <h1 className="mb-6 text-xl font-semibold text-gray-800">Hi, {profile.name}</h1>
+
+        <div className="mb-6 flex justify-center">
+          <img src={petImage} alt="Your sea lion" className="h-40 w-40 object-contain" />
+        </div>
 
         <div className="flex flex-col gap-6">
           <ProgressRow color="green" label="Stand Progress" percent={standPercent} />

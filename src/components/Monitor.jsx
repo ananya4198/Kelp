@@ -31,18 +31,24 @@ export default function Monitor() {
 
       <PostureStatus posture={posture} />
 
-      <div className="grid grid-cols-3 gap-3 text-center">
+      <div className="grid grid-cols-2 gap-3 text-center">
         <div className="rounded-xl bg-gray-100 p-3">
           <div className="text-xl font-bold">{fmt(stats.sittingSec)}</div>
           <div className="text-xs">Sitting</div>
         </div>
         <div className="rounded-xl bg-gray-100 p-3">
-          <div className="text-xl font-bold">{stats.breaks}</div>
-          <div className="text-xs">Breaks</div>
-        </div>
-        <div className="rounded-xl bg-gray-100 p-3">
           <div className="text-xl font-bold">{stats.bites}</div>
           <div className="text-xs">Nail-biting alerts</div>
+        </div>
+        <div className="rounded-xl bg-gray-100 p-3">
+          <div className="text-xl font-bold">{stats.expectedStandups}</div>
+          <div className="text-xs">Stand alerts sent</div>
+        </div>
+        <div className="rounded-xl bg-gray-100 p-3">
+          <div className="text-xl font-bold">
+            {stats.performedStandups}/{stats.expectedStandups}
+          </div>
+          <div className="text-xs">Standups performed</div>
         </div>
       </div>
     </div>
