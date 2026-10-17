@@ -5,7 +5,7 @@ import PostureStatus from './PostureStatus';
 const fmt = (sec) => `${String(Math.floor(sec / 60)).padStart(2, '0')}:${String(sec % 60).padStart(2, '0')}`;
 
 export default function Monitor() {
-  const { videoRef, running, loading, error, stats, sitLimitSec, start, stop } = useHabitMonitor();
+  const { videoRef, running, loading, error, stats, sitLimitSec, start, stop, paused, togglePause } = useHabitMonitor();
   // Posture detection reuses the habit monitor's camera instead of opening its own.
   const posture = usePostureDetection({ videoRef, enabled: running });
   const { canvasRef: postureCanvasRef } = posture;
@@ -28,6 +28,13 @@ export default function Monitor() {
         {loading ? 'Loading models...' : running ? 'End Session' : 'Start Session'}
       </button>
       {error && <p className="text-red-600">{error}</p>}
+      <button
+  onClick={togglePause}
+  disabled={!running}
+  className="w-full rounded-xl border border-emerald-600 px-4 py-2 font-medium text-emerald-700 disabled:opacity-40"
+>
+  {paused ? 'Resume nail-biting alerts' : 'Pause nail-biting alerts'}
+</button>
 
       <PostureStatus posture={posture} />
 

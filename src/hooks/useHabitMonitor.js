@@ -19,8 +19,8 @@ import { showStandAlert } from '../lib/standAlert';
 // session starts. sitRepeatMs is how often it re-reminds if you ignore it.
 const DEMO = true;
 const CFG = DEMO
-  ? { sitRepeatMs: 30_000, breakAfterMs: 8_000, biteMs: 2_000, biteCooldownMs: 10_000 }
-  : { sitRepeatMs: 10 * 60_000, breakAfterMs: 3 * 60_000, biteMs: 2_500, biteCooldownMs: 30_000 };
+  ? { sitRepeatMs: 30_000, breakAfterMs: 8_000, biteWindow: 4, biteNeed: 3, biteCooldownMs: 10_000 }
+  : { sitRepeatMs: 10 * 60_000, breakAfterMs: 3 * 60_000, biteWindow: 8, biteNeed: 6, biteCooldownMs: 30_000 };
 const DEFAULT_STAND_REMINDER_MINUTES = 45;
 
 const INITIAL_STATS = {
@@ -49,6 +49,8 @@ export function useHabitMonitor() {
   const detectorsRef = useRef(null);
   const timerRef = useRef(null);
   const sessionIdRef = useRef(null);
+  const win = useRef([]);
+  const pausedRef = useRef(false);
   const st = useRef(initialTracking());
   const sitLimitMsRef = useRef(DEFAULT_STAND_REMINDER_MINUTES * 60_000);
 
@@ -56,6 +58,7 @@ export function useHabitMonitor() {
   const [running, setRunning] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [paused, setPaused] = useState(false);
   const [stats, setStats] = useState(INITIAL_STATS);
 
   const tick = () => {
@@ -95,21 +98,25 @@ export function useHabitMonitor() {
       }
     }
 
-    // Nail biting (hand near mouth for a few seconds in a row)
-    if (facePresent && handToMouth) {
-      if (s.handSince === null) s.handSince = now;
-      else if (now - s.handSince >= CFG.biteMs && now - s.lastBite > CFG.biteCooldownMs) {
-        s.lastBite = now;
-        s.bites += 1;
-        toast('Hands away from your mouth 💅');
-        if (sessionIdRef.current) {
-          recordHabitEvent({ sessionId: sessionIdRef.current, habitType: 'nail_biting' })
-            .then(notifyStatsChanged)
-            .catch((err) => console.error('Failed to record habit event', err));
-        }
+    // Nail biting: most of the last few checks must look like biting
+    win.current.push(facePresent && handToMouth);
+    if (win.current.length > CFG.biteWindow) win.current.shift();
+    const hits = win.current.filter(Boolean).length;
+    if (
+      !pausedRef.current &&
+      win.current.length === CFG.biteWindow &&
+      hits >= CFG.biteNeed &&
+      now - s.lastBite > CFG.biteCooldownMs
+    ) {
+      s.lastBite = now;
+      s.bites += 1;
+      win.current = [];
+      toast('Stop biting your nails!');
+      if (sessionIdRef.current) {
+        recordHabitEvent({ sessionId: sessionIdRef.current, habitType: 'nail_biting' })
+          .then(notifyStatsChanged)
+          .catch((err) => console.error('Failed to record habit event', err));
       }
-    } else {
-      s.handSince = null;
     }
 
     setStats({
@@ -154,10 +161,16 @@ export function useHabitMonitor() {
     // Each session starts fresh: reset the sitting timer, breaks and alerts.
     st.current = initialTracking();
     setStats(INITIAL_STATS);
+    win.current = [];
+    pausedRef.current = false;
+    setPaused(false);
     setRunning(false);
   };
-
+  const togglePause = () => {
+  pausedRef.current = !pausedRef.current;
+  setPaused(pausedRef.current);
+};
   useEffect(() => stop, []); // clean up on unmount
 
-  return { videoRef, running, loading, error, stats, sitLimitSec, start, stop };
+  return { videoRef, running, loading, error, stats, sitLimitSec, start, stop, paused, togglePause };
 }

@@ -7,12 +7,14 @@ import healthyPet from '../pet_imgs/healthy.png'
 import sadPet from '../pet_imgs/sad.png'
 import verySadPet from '../pet_imgs/verysad.png'
 
+
 /** Sea lion's mood worsens as bad habits pile up or standup alerts go unanswered. */
 function petImageFor({ badHabits, standupGap }) {
   if (badHabits > 5 || standupGap > 5) return verySadPet
   if (badHabits > 2 || standupGap > 3) return sadPet
   return healthyPet
 }
+
 
 function StandAlert() {
   return (
@@ -30,16 +32,19 @@ function StandAlert() {
   )
 }
 
+
 const ROW_STYLES = {
   green: { label: 'bg-green-400 text-green-950', fill: 'bg-green-500' },
   red: { label: 'bg-red-400 text-red-950', fill: 'bg-red-500' },
   yellow: { label: 'bg-yellow-200 text-yellow-900', fill: 'bg-yellow-300' },
 }
 
+
 function clampPercent(value, goal) {
   if (!goal) return 0
   return Math.max(0, Math.min(100, (value / goal) * 100))
 }
+
 
 function ProgressRow({ color, label, percent }) {
   const styles = ROW_STYLES[color]
@@ -56,6 +61,7 @@ function ProgressRow({ color, label, percent }) {
   )
 }
 
+
 function GoalsModal({ profile, onClose, onSaved }) {
   const [name, setName] = useState(profile.name)
   const [standGoal, setStandGoal] = useState(profile.stand_goal)
@@ -63,6 +69,7 @@ function GoalsModal({ profile, onClose, onSaved }) {
   const [streakGoal, setStreakGoal] = useState(profile.streak_goal)
   const [standReminderMinutes, setStandReminderMinutes] = useState(profile.stand_reminder_minutes ?? 45)
   const [saving, setSaving] = useState(false)
+
 
   async function handleSubmit(event) {
     event.preventDefault()
@@ -78,10 +85,12 @@ function GoalsModal({ profile, onClose, onSaved }) {
     onSaved(updated)
   }
 
+
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black/30 p-4">
       <form onSubmit={handleSubmit} className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
         <h2 className="mb-4 text-lg font-semibold">Set Goals</h2>
+
 
         <label className="mb-3 block text-sm font-medium text-gray-700">
           Name
@@ -91,6 +100,7 @@ function GoalsModal({ profile, onClose, onSaved }) {
             onChange={(e) => setName(e.target.value)}
           />
         </label>
+
 
         <label className="mb-3 block text-sm font-medium text-gray-700">
           Remind me to stand after sitting for (minutes)
@@ -104,7 +114,9 @@ function GoalsModal({ profile, onClose, onSaved }) {
           />
         </label>
 
-        
+
+       
+
 
         <div className="flex justify-end gap-2">
           <button
@@ -127,11 +139,13 @@ function GoalsModal({ profile, onClose, onSaved }) {
   )
 }
 
+
 function Dashboard() {
   const [profile, setProfile] = useState(null)
   const [today, setToday] = useState(null)
   const [error, setError] = useState(null)
   const [goalsOpen, setGoalsOpen] = useState(false)
+
 
   useEffect(() => {
     const refresh = () => {
@@ -143,9 +157,11 @@ function Dashboard() {
         .catch((err) => setError(err.message))
     }
 
+
     refresh()
     return onStatsChanged(refresh)
   }, [])
+
 
   if (error) {
     return (
@@ -153,9 +169,11 @@ function Dashboard() {
     )
   }
 
+
   if (!profile || !today) {
     return <div className="flex h-full items-center justify-center text-gray-500">Loading…</div>
   }
+
 
   const standPercent = clampPercent(today.stand_count, profile.stand_goal)
   const badHabitPercent = clampPercent(today.habit_event_count, 20)
@@ -163,20 +181,24 @@ function Dashboard() {
   const standupGap = today.expected_standups - today.performed_standups
   const petImage = petImageFor({ badHabits: today.habit_event_count, standupGap })
 
+
   return (
     <div className="flex min-h-full items-center justify-center bg-gray-50 p-6">
       <div className="w-full max-w-xl rounded-2xl border border-black/10 bg-white p-8 shadow-sm">
         <h1 className="mb-6 text-xl font-semibold text-gray-800">Hi, {profile.name}</h1>
 
+
         <div className="mb-6 flex justify-center">
           <img src={petImage} alt="Your sea lion" className="h-40 w-40 object-contain" />
         </div>
+
 
         <div className="flex flex-col gap-6">
           <ProgressRow color="green" label="Good Habits Today" percent={standPercent} />
           <ProgressRow color="red" label="Bad Habits Today" percent={badHabitPercent} />
           <ProgressRow color="yellow" label={`Streak 🔥 ${profile.current_streak}`} percent={streakPercent} />
         </div>
+
 
         <div className="mt-6 grid grid-cols-3 gap-3 text-center">
           <div className="rounded-xl bg-gray-100 p-3">
@@ -193,6 +215,7 @@ function Dashboard() {
           </div>
         </div>
 
+
         <div className="mt-6 flex justify-center">
           <button
             onClick={() => setGoalsOpen(true)}
@@ -202,6 +225,7 @@ function Dashboard() {
           </button>
         </div>
       </div>
+
 
       {goalsOpen && (
         <GoalsModal
@@ -217,21 +241,26 @@ function Dashboard() {
   )
 }
 
+
 const TABS = [
   { id: 'dashboard', label: 'Dashboard' },
   { id: 'session', label: 'Live Session' },
 ]
 
+
 function App() {
   const [tab, setTab] = useState('dashboard')
+
 
   if (window.location.hash === '#stand-alert') {
     return <StandAlert />
   }
 
+
   return (
     <div className="flex h-screen flex-col">
       <Toaster position="top-right" />
+
 
       <nav className="flex justify-center gap-2 border-b border-black/10 bg-white p-3">
         {TABS.map((t) => (
@@ -247,8 +276,10 @@ function App() {
         ))}
       </nav>
 
+
       <main className="relative flex-1 overflow-auto">
         {tab === 'dashboard' && <Dashboard />}
+
 
         {/* Monitor stays mounted across tab switches (moved off-screen rather than
             unmounted) so the camera stream, detection loop, and session keep running
@@ -261,4 +292,8 @@ function App() {
   )
 }
 
+
 export default App
+
+
+
