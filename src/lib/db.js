@@ -15,6 +15,10 @@ export function endSession(sessionId) {
   return requireDb().endSession(sessionId)
 }
 
+export function getSession(sessionId) {
+  return requireDb().getSession(sessionId)
+}
+
 /** Records one per-minute posture/eye-tracking sample. */
 export function recordPostureSnapshot({ sessionId, postureStatus, eyeStatus = 'unknown', sittingSeconds = 60 }) {
   return requireDb().recordPostureSnapshot({ sessionId, postureStatus, eyeStatus, sittingSeconds })
@@ -30,14 +34,24 @@ export function recordStandupFollowed() {
   return requireDb().recordStandupFollowed()
 }
 
+/** Called each time a stand alert popup is shown: how many standups the user should have performed. */
+export function recordExpectedStandup(sessionId) {
+  return requireDb().recordExpectedStandup(sessionId)
+}
+
+/** Called each time the vision model detects the user actually stood up/stepped away. */
+export function recordPerformedStandup(sessionId) {
+  return requireDb().recordPerformedStandup(sessionId)
+}
+
 /** Name, streak, points, creature growth stage, and goal targets. */
 export function getProfile() {
   return requireDb().getProfile()
 }
 
 /** Partial update of name/goals; omitted fields are left unchanged. */
-export function updateProfile({ name, standGoal, badHabitLimit, streakGoal } = {}) {
-  return requireDb().updateProfile({ name, standGoal, badHabitLimit, streakGoal })
+export function updateProfile({ name, standGoal, badHabitLimit, streakGoal, standReminderMinutes } = {}) {
+  return requireDb().updateProfile({ name, standGoal, badHabitLimit, streakGoal, standReminderMinutes })
 }
 
 /**

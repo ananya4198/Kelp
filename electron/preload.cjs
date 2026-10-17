@@ -6,9 +6,12 @@ contextBridge.exposeInMainWorld('electron', {
   db: {
     startSession: () => ipcRenderer.invoke('db:startSession'),
     endSession: (sessionId) => ipcRenderer.invoke('db:endSession', sessionId),
+    getSession: (sessionId) => ipcRenderer.invoke('db:getSession', sessionId),
     recordPostureSnapshot: (payload) => ipcRenderer.invoke('db:recordPostureSnapshot', payload),
     recordHabitEvent: (payload) => ipcRenderer.invoke('db:recordHabitEvent', payload),
     recordStandupFollowed: () => ipcRenderer.invoke('db:recordStandupFollowed'),
+    recordExpectedStandup: (sessionId) => ipcRenderer.invoke('db:recordExpectedStandup', sessionId),
+    recordPerformedStandup: (sessionId) => ipcRenderer.invoke('db:recordPerformedStandup', sessionId),
     getProfile: () => ipcRenderer.invoke('db:getProfile'),
     updateProfile: (payload) => ipcRenderer.invoke('db:updateProfile', payload),
     getDailySummaries: (range) => ipcRenderer.invoke('db:getDailySummaries', range),

@@ -3,6 +3,16 @@ import { Toaster } from 'sonner'
 import Monitor from './components/Monitor'
 import { getProfile, getTodaySummary, updateProfile } from './lib/db'
 import { onStatsChanged } from './lib/statsBus'
+import healthyPet from '../pet_imgs/healthy.png'
+import sadPet from '../pet_imgs/sad.png'
+import verySadPet from '../pet_imgs/verysad.png'
+
+/** Sea lion's mood worsens as bad habits pile up or standup alerts go unanswered. */
+function petImageFor({ badHabits, standupGap }) {
+  if (badHabits > 5 || standupGap > 5) return verySadPet
+  if (badHabits > 2 || standupGap > 3) return sadPet
+  return healthyPet
+}
 
 function StandAlert() {
   return (
@@ -51,6 +61,7 @@ function GoalsModal({ profile, onClose, onSaved }) {
   const [standGoal, setStandGoal] = useState(profile.stand_goal)
   const [badHabitLimit, setBadHabitLimit] = useState(profile.bad_habit_limit)
   const [streakGoal, setStreakGoal] = useState(profile.streak_goal)
+  const [standReminderMinutes, setStandReminderMinutes] = useState(profile.stand_reminder_minutes ?? 45)
   const [saving, setSaving] = useState(false)
 
   async function handleSubmit(event) {
@@ -61,6 +72,7 @@ function GoalsModal({ profile, onClose, onSaved }) {
       standGoal: Number(standGoal),
       badHabitLimit: Number(badHabitLimit),
       streakGoal: Number(streakGoal),
+      standReminderMinutes: Number(standReminderMinutes),
     })
     setSaving(false)
     onSaved(updated)
@@ -88,6 +100,18 @@ function GoalsModal({ profile, onClose, onSaved }) {
             className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
             value={standGoal}
             onChange={(e) => setStandGoal(e.target.value)}
+          />
+        </label>
+
+        <label className="mb-3 block text-sm font-medium text-gray-700">
+          Remind me to stand after sitting for (minutes)
+          <input
+            type="number"
+            min="1"
+            max="240"
+            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+            value={standReminderMinutes}
+            onChange={(e) => setStandReminderMinutes(e.target.value)}
           />
         </label>
 
@@ -167,11 +191,17 @@ function Dashboard() {
   const standPercent = clampPercent(today.stand_count, profile.stand_goal)
   const badHabitPercent = clampPercent(today.habit_event_count, profile.bad_habit_limit)
   const streakPercent = clampPercent(profile.current_streak, profile.streak_goal)
+  const standupGap = today.expected_standups - today.performed_standups
+  const petImage = petImageFor({ badHabits: today.habit_event_count, standupGap })
 
   return (
     <div className="flex min-h-full items-center justify-center bg-gray-50 p-6">
       <div className="w-full max-w-xl rounded-2xl border border-black/10 bg-white p-8 shadow-sm">
         <h1 className="mb-6 text-xl font-semibold text-gray-800">Hi, {profile.name}</h1>
+
+        <div className="mb-6 flex justify-center">
+          <img src={petImage} alt="Your sea lion" className="h-40 w-40 object-contain" />
+        </div>
 
         <div className="flex flex-col gap-6">
           <ProgressRow color="green" label="Stand Progress" percent={standPercent} />
