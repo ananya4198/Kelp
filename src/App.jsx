@@ -93,49 +93,18 @@ function GoalsModal({ profile, onClose, onSaved }) {
         </label>
 
         <label className="mb-3 block text-sm font-medium text-gray-700">
-          Daily standup goal
+          Remind me to stand after sitting for (minutes)
           <input
             type="number"
             min="1"
+            max = "240"
             className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
             value={standGoal}
             onChange={(e) => setStandGoal(e.target.value)}
           />
         </label>
 
-        <label className="mb-3 block text-sm font-medium text-gray-700">
-          Remind me to stand after sitting for (minutes)
-          <input
-            type="number"
-            min="1"
-            max="240"
-            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
-            value={standReminderMinutes}
-            onChange={(e) => setStandReminderMinutes(e.target.value)}
-          />
-        </label>
-
-        <label className="mb-3 block text-sm font-medium text-gray-700">
-          Bad habit limit (per day)
-          <input
-            type="number"
-            min="1"
-            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
-            value={badHabitLimit}
-            onChange={(e) => setBadHabitLimit(e.target.value)}
-          />
-        </label>
-
-        <label className="mb-5 block text-sm font-medium text-gray-700">
-          Streak goal (days)
-          <input
-            type="number"
-            min="1"
-            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
-            value={streakGoal}
-            onChange={(e) => setStreakGoal(e.target.value)}
-          />
-        </label>
+        
 
         <div className="flex justify-end gap-2">
           <button
@@ -189,8 +158,8 @@ function Dashboard() {
   }
 
   const standPercent = clampPercent(today.stand_count, profile.stand_goal)
-  const badHabitPercent = clampPercent(today.habit_event_count, profile.bad_habit_limit)
-  const streakPercent = clampPercent(profile.current_streak, profile.streak_goal)
+  const badHabitPercent = clampPercent(today.habit_event_count, 20)
+  const streakPercent = clampPercent(profile.current_streak, 7)
   const standupGap = today.expected_standups - today.performed_standups
   const petImage = petImageFor({ badHabits: today.habit_event_count, standupGap })
 
@@ -204,23 +173,23 @@ function Dashboard() {
         </div>
 
         <div className="flex flex-col gap-6">
-          <ProgressRow color="green" label="Stand Progress" percent={standPercent} />
+          <ProgressRow color="green" label="Good Habits Today" percent={standPercent} />
           <ProgressRow color="red" label="Bad Habits Today" percent={badHabitPercent} />
           <ProgressRow color="yellow" label={`Streak 🔥 ${profile.current_streak}`} percent={streakPercent} />
         </div>
 
         <div className="mt-6 grid grid-cols-3 gap-3 text-center">
           <div className="rounded-xl bg-gray-100 p-3">
-            <div className="text-lg font-bold text-gray-800">{profile.stand_goal}/day</div>
-            <div className="text-xs text-gray-500">Stand goal</div>
+            <div className="text-lg font-bold text-gray-800"> Every {profile.stand_goal} minutes </div>
+            <div className="text-xs text-gray-500">Standing goal</div>
           </div>
           <div className="rounded-xl bg-gray-100 p-3">
-            <div className="text-lg font-bold text-gray-800">{profile.bad_habit_limit}/day</div>
-            <div className="text-xs text-gray-500">Bad habit limit</div>
+            <div className="text-lg font-bold text-gray-800">{today.habit_event_count} today</div>
+            <div className="text-xs text-gray-500">Bad habit alerts </div>
           </div>
           <div className="rounded-xl bg-gray-100 p-3">
-            <div className="text-lg font-bold text-gray-800">{profile.streak_goal} days</div>
-            <div className="text-xs text-gray-500">Streak goal</div>
+            <div className="text-lg font-bold text-gray-800">{profile.current_streak} days</div>
+            <div className="text-xs text-gray-500">Current Streak</div>
           </div>
         </div>
 
