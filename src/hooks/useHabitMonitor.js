@@ -4,6 +4,7 @@ import { startCamera, stopCamera } from '../lib/camera';
 import { createDetectors, analyze } from '../lib/detectors';
 import { startSession, endSession, recordHabitEvent, recordStandupFollowed } from '../lib/db';
 import { notifyStatsChanged } from '../lib/statsBus';
+import { showStandAlert } from '../lib/standAlert';
 
 const DEMO = true;
 const CFG = DEMO
@@ -45,7 +46,7 @@ export function useHabitMonitor() {
     const sittingMs = s.sittingStart ? now - s.sittingStart : 0;
     if (sittingMs > CFG.sitLimitMs && now - s.lastSit > CFG.sitRepeatMs) {
       s.lastSit = now;
-      toast('You have been sitting a while. Stand up and stretch! 🧘');
+      showStandAlert();
     }
 
     // Nail biting (hand near mouth for a few seconds in a row)

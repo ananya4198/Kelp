@@ -14,4 +14,7 @@ contextBridge.exposeInMainWorld('electron', {
     getDailySummaries: (range) => ipcRenderer.invoke('db:getDailySummaries', range),
     getTodaySummary: () => ipcRenderer.invoke('db:getTodaySummary'),
   },
+  standAlert: {
+    show: () => ipcRenderer.send('stand-alert:show'),
+  },
 })

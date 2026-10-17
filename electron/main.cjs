@@ -5,6 +5,7 @@ const devServerUrl = process.env.ELECTRON_START_URL
 
 let mainWindow = null
 let tray = null
+let standAlertWindow = null
 
 if (!app.requestSingleInstanceLock()) {
   app.quit()
@@ -52,6 +53,52 @@ function createWindow() {
       event.preventDefault()
       mainWindow.hide()
     }
+  })
+}
+
+// A small frameless always-on-top window, independent of the main window,
+// so a stand alert is visible even while the main window is hidden to the
+// tray. Reused across alerts instead of stacking duplicates.
+function showStandAlertWindow() {
+  if (standAlertWindow && !standAlertWindow.isDestroyed()) {
+    standAlertWindow.show()
+    standAlertWindow.focus()
+    return
+  }
+
+  standAlertWindow = new BrowserWindow({
+    width: 380,
+    height: 220,
+    frame: false,
+    resizable: false,
+    minimizable: false,
+    maximizable: false,
+    fullscreenable: false,
+    skipTaskbar: true,
+    alwaysOnTop: true,
+    center: true,
+    show: false,
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.cjs'),
+      contextIsolation: true,
+      nodeIntegration: false,
+    },
+  })
+
+  if (devServerUrl) {
+    standAlertWindow.loadURL(`${devServerUrl}#stand-alert`)
+  } else {
+    standAlertWindow.loadFile(path.join(__dirname, '../dist/index.html'), { hash: 'stand-alert' })
+  }
+
+  standAlertWindow.once('ready-to-show', () => {
+    standAlertWindow.show()
+    standAlertWindow.focus()
+    app.focus({ steal: true })
+  })
+
+  standAlertWindow.on('closed', () => {
+    standAlertWindow = null
   })
 }
 
@@ -119,6 +166,7 @@ app.whenReady().then(() => {
   })
 
   registerDbHandlers()
+  ipcMain.on('stand-alert:show', showStandAlertWindow)
   createWindow()
   createTray()
 
