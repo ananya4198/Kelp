@@ -21,17 +21,18 @@ function loadBaseline() {
 }
 
 /**
- * Runs MediaPipe pose detection on the webcam and classifies posture.
- * Attach `videoRef` to a <video> and (optionally) `canvasRef` to an overlay
+ * Runs MediaPipe pose detection on an already-playing <video> and classifies
+ * posture. The camera itself is owned by the caller (see useHabitMonitor), so
+ * several detectors can share one webcam. Attach `canvasRef` to an overlay
  * <canvas> to see the skeleton.
  */
-export function usePostureDetection({ enabled = true } = {}) {
-  const videoRef = useRef(null)
+export function usePostureDetection({ videoRef, enabled }) {
   const canvasRef = useRef(null)
   const recentMetrics = useRef([])
   const baselineRef = useRef(loadBaseline())
 
-  const [state, setState] = useState('loading') // loading | running | error
+  // loading | running | error; reported as 'idle' while disabled.
+  const [state, setState] = useState('loading')
   const [error, setError] = useState(null)
   const [status, setStatus] = useState('unknown')
   const [metrics, setMetrics] = useState(null)
@@ -40,33 +41,23 @@ export function usePostureDetection({ enabled = true } = {}) {
   useEffect(() => {
     if (!enabled) return
     let cancelled = false
-    let stream = null
     let timer = null
+    const canvas = canvasRef.current
 
     async function start() {
       try {
-        setState('loading')
-        const [landmarker, mediaStream] = await Promise.all([
-          getPoseLandmarker(),
-          navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 }, audio: false }),
-        ])
-        stream = mediaStream
-        if (cancelled) return
-
-        const video = videoRef.current
-        video.srcObject = stream
-        await video.play()
+        const landmarker = await getPoseLandmarker()
         if (cancelled) return
         setState('running')
 
-        const canvas = canvasRef.current
         const ctx = canvas?.getContext('2d')
         const drawer = ctx ? new DrawingUtils(ctx) : null
         let lastTime = -1
 
         const tick = () => {
           if (cancelled) return
-          if (video.readyState >= 2) {
+          const video = videoRef.current
+          if (video && video.readyState >= 2) {
             const now = performance.now()
             // detectForVideo requires strictly increasing timestamps.
             if (now > lastTime) {
@@ -108,10 +99,14 @@ export function usePostureDetection({ enabled = true } = {}) {
     return () => {
       cancelled = true
       clearTimeout(timer)
-      stream?.getTracks().forEach((t) => t.stop())
       recentMetrics.current = []
+      canvas?.getContext('2d')?.clearRect(0, 0, canvas.width, canvas.height)
+      setState('loading')
+      setError(null)
+      setStatus('unknown')
+      setMetrics(null)
     }
-  }, [enabled])
+  }, [enabled, videoRef])
 
   /** Call while sitting up straight to record the user's "good" posture. */
   const calibrate = useCallback(() => {
@@ -128,7 +123,15 @@ export function usePostureDetection({ enabled = true } = {}) {
     return true
   }, [])
 
-  return { videoRef, canvasRef, state, error, status, metrics, isCalibrated, calibrate }
+  return {
+    canvasRef,
+    state: enabled ? state : 'idle',
+    error,
+    status,
+    metrics,
+    isCalibrated,
+    calibrate,
+  }
 }
 
 function drawPose(canvas, ctx, drawer, video, landmarks) {

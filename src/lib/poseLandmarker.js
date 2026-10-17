@@ -1,7 +1,6 @@
-import { FilesetResolver, PoseLandmarker } from '@mediapipe/tasks-vision'
+import { PoseLandmarker } from '@mediapipe/tasks-vision'
+import { getVisionFileset } from './vision'
 
-// Keep the wasm version in sync with the installed @mediapipe/tasks-vision.
-const WASM_URL = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.1.1/wasm'
 const MODEL_URL =
   'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task'
 
@@ -11,7 +10,7 @@ let landmarkerPromise = null
 export function getPoseLandmarker() {
   if (!landmarkerPromise) {
     landmarkerPromise = (async () => {
-      const vision = await FilesetResolver.forVisionTasks(WASM_URL)
+      const vision = await getVisionFileset()
       return PoseLandmarker.createFromOptions(vision, {
         baseOptions: { modelAssetPath: MODEL_URL, delegate: 'GPU' },
         runningMode: 'VIDEO',

@@ -1,13 +1,13 @@
-import { FilesetResolver, FaceLandmarker, HandLandmarker } from '@mediapipe/tasks-vision';
+import { FaceLandmarker, HandLandmarker } from '@mediapipe/tasks-vision';
+import { getVisionFileset } from './vision';
 
-const WASM = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/wasm';
 const FACE_MODEL =
   'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task';
 const HAND_MODEL =
   'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task';
 
 export async function createDetectors() {
-  const vision = await FilesetResolver.forVisionTasks(WASM);
+  const vision = await getVisionFileset();
   const face = await FaceLandmarker.createFromOptions(vision, {
     baseOptions: { modelAssetPath: FACE_MODEL },
     runningMode: 'VIDEO',

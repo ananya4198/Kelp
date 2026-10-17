@@ -1,9 +1,3 @@
-<<<<<<< HEAD
-import PostureMonitor from './components/PostureMonitor'
-
-function App() {
-  return <PostureMonitor />
-=======
 import { useEffect, useState } from 'react'
 import { Toaster } from 'sonner'
 import Monitor from './components/Monitor'
@@ -218,7 +212,6 @@ function App() {
       </main>
     </div>
   )
->>>>>>> 9b69a0bee9a45333f5f9734ca7afe3309f1e1fba
 }
 
 export default App
