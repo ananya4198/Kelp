@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react'
+import { Toaster } from 'sonner'
+import Monitor from './components/Monitor'
 import { getProfile, getTodaySummary, updateProfile } from './lib/db'
 
 const ROW_STYLES = {
@@ -115,7 +117,7 @@ function GoalsModal({ profile, onClose, onSaved }) {
   )
 }
 
-function App() {
+function Dashboard() {
   const [profile, setProfile] = useState(null)
   const [today, setToday] = useState(null)
   const [error, setError] = useState(null)
@@ -132,14 +134,12 @@ function App() {
 
   if (error) {
     return (
-      <div className="flex h-screen items-center justify-center p-6 text-center text-gray-600">
-        {error}
-      </div>
+      <div className="flex h-full items-center justify-center p-6 text-center text-gray-600">{error}</div>
     )
   }
 
   if (!profile || !today) {
-    return <div className="flex h-screen items-center justify-center text-gray-500">Loading…</div>
+    return <div className="flex h-full items-center justify-center text-gray-500">Loading…</div>
   }
 
   const standPercent = clampPercent(today.stand_count, profile.stand_goal)
@@ -147,7 +147,7 @@ function App() {
   const streakPercent = clampPercent(profile.current_streak, profile.streak_goal)
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 p-6">
+    <div className="flex min-h-full items-center justify-center bg-gray-50 p-6">
       <div className="w-full max-w-xl rounded-2xl border border-black/10 bg-white p-8 shadow-sm">
         <h1 className="mb-6 text-xl font-semibold text-gray-800">Hi, {profile.name}</h1>
 
@@ -177,6 +177,39 @@ function App() {
           }}
         />
       )}
+    </div>
+  )
+}
+
+const TABS = [
+  { id: 'dashboard', label: 'Dashboard' },
+  { id: 'session', label: 'Live Session' },
+]
+
+function App() {
+  const [tab, setTab] = useState('dashboard')
+
+  return (
+    <div className="flex h-screen flex-col">
+      <Toaster position="top-right" />
+
+      <nav className="flex justify-center gap-2 border-b border-black/10 bg-white p-3">
+        {TABS.map((t) => (
+          <button
+            key={t.id}
+            onClick={() => setTab(t.id)}
+            className={`rounded-full px-5 py-2 font-medium transition-colors ${
+              tab === t.id ? 'bg-blue-400 text-white' : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </nav>
+
+      <main className="flex-1 overflow-auto">
+        {tab === 'dashboard' ? <Dashboard /> : <Monitor />}
+      </main>
     </div>
   )
 }
