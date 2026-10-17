@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { startCamera, stopCamera } from '../lib/camera';
 import { createDetectors, analyze } from '../lib/detectors';
+import { startSession, endSession, recordHabitEvent, recordStandupFollowed } from '../lib/db';
+import { notifyStatsChanged } from '../lib/statsBus';
 
 const DEMO = true;
 const CFG = DEMO
@@ -13,6 +15,7 @@ export function useHabitMonitor() {
   const streamRef = useRef(null);
   const detectorsRef = useRef(null);
   const timerRef = useRef(null);
+  const sessionIdRef = useRef(null);
   const st = useRef({ sittingStart: null, lastSeen: 0, handSince: null, lastBite: 0, lastSit: 0, bites: 0, breaks: 0 });
 
   const [running, setRunning] = useState(false);
@@ -35,6 +38,9 @@ export function useHabitMonitor() {
       s.sittingStart = null;
       s.breaks += 1;
       toast.success('Nice break! Timer reset 🌱');
+      recordStandupFollowed()
+        .then(notifyStatsChanged)
+        .catch((err) => console.error('Failed to record standup', err));
     }
     const sittingMs = s.sittingStart ? now - s.sittingStart : 0;
     if (sittingMs > CFG.sitLimitMs && now - s.lastSit > CFG.sitRepeatMs) {
@@ -49,6 +55,11 @@ export function useHabitMonitor() {
         s.lastBite = now;
         s.bites += 1;
         toast('Hands away from your mouth 💅');
+        if (sessionIdRef.current) {
+          recordHabitEvent({ sessionId: sessionIdRef.current, habitType: 'nail_biting' })
+            .then(notifyStatsChanged)
+            .catch((err) => console.error('Failed to record habit event', err));
+        }
       }
     } else {
       s.handSince = null;
@@ -63,6 +74,8 @@ export function useHabitMonitor() {
       setLoading(true);
       streamRef.current = await startCamera(videoRef.current);
       if (!detectorsRef.current) detectorsRef.current = await createDetectors();
+      const session = await startSession();
+      sessionIdRef.current = session.id;
       timerRef.current = setInterval(tick, 1000);
       setRunning(true);
     } catch (e) {
@@ -76,6 +89,10 @@ export function useHabitMonitor() {
     clearInterval(timerRef.current);
     stopCamera(streamRef.current, videoRef.current);
     streamRef.current = null;
+    if (sessionIdRef.current) {
+      endSession(sessionIdRef.current).catch((err) => console.error('Failed to end session', err));
+      sessionIdRef.current = null;
+    }
     setRunning(false);
   };
 

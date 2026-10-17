@@ -25,7 +25,7 @@ export default function Monitor() {
         disabled={loading}
         className="w-full rounded-xl bg-emerald-600 px-4 py-3 font-semibold text-white disabled:opacity-50"
       >
-        {loading ? 'Loading models...' : running ? 'Stop' : 'Start'}
+        {loading ? 'Loading models...' : running ? 'End Session' : 'Start Session'}
       </button>
       {error && <p className="text-red-600">{error}</p>}
 

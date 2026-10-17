@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Toaster } from 'sonner'
 import Monitor from './components/Monitor'
 import { getProfile, getTodaySummary, updateProfile } from './lib/db'
+import { onStatsChanged } from './lib/statsBus'
 
 const ROW_STYLES = {
   green: { label: 'bg-green-400 text-green-950', fill: 'bg-green-500' },
@@ -124,12 +125,17 @@ function Dashboard() {
   const [goalsOpen, setGoalsOpen] = useState(false)
 
   useEffect(() => {
-    Promise.all([getProfile(), getTodaySummary()])
-      .then(([profileResult, todayResult]) => {
-        setProfile(profileResult)
-        setToday(todayResult)
-      })
-      .catch((err) => setError(err.message))
+    const refresh = () => {
+      Promise.all([getProfile(), getTodaySummary()])
+        .then(([profileResult, todayResult]) => {
+          setProfile(profileResult)
+          setToday(todayResult)
+        })
+        .catch((err) => setError(err.message))
+    }
+
+    refresh()
+    return onStatsChanged(refresh)
   }, [])
 
   if (error) {
@@ -157,7 +163,22 @@ function Dashboard() {
           <ProgressRow color="yellow" label={`Streak 🔥 ${profile.current_streak}`} percent={streakPercent} />
         </div>
 
-        <div className="mt-8 flex justify-center">
+        <div className="mt-6 grid grid-cols-3 gap-3 text-center">
+          <div className="rounded-xl bg-gray-100 p-3">
+            <div className="text-lg font-bold text-gray-800">{profile.stand_goal}/day</div>
+            <div className="text-xs text-gray-500">Stand goal</div>
+          </div>
+          <div className="rounded-xl bg-gray-100 p-3">
+            <div className="text-lg font-bold text-gray-800">{profile.bad_habit_limit}/day</div>
+            <div className="text-xs text-gray-500">Bad habit limit</div>
+          </div>
+          <div className="rounded-xl bg-gray-100 p-3">
+            <div className="text-lg font-bold text-gray-800">{profile.streak_goal} days</div>
+            <div className="text-xs text-gray-500">Streak goal</div>
+          </div>
+        </div>
+
+        <div className="mt-6 flex justify-center">
           <button
             onClick={() => setGoalsOpen(true)}
             className="rounded-full bg-blue-400 px-6 py-2 font-medium text-white hover:bg-blue-500"
@@ -207,8 +228,15 @@ function App() {
         ))}
       </nav>
 
-      <main className="flex-1 overflow-auto">
-        {tab === 'dashboard' ? <Dashboard /> : <Monitor />}
+      <main className="relative flex-1 overflow-auto">
+        {tab === 'dashboard' && <Dashboard />}
+
+        {/* Monitor stays mounted across tab switches (moved off-screen rather than
+            unmounted) so the camera stream, detection loop, and session keep running
+            in the background instead of stopping every time you leave this tab. */}
+        <div className={tab === 'session' ? 'h-full' : 'fixed -top-[200vh] left-0 h-full w-full'}>
+          <Monitor />
+        </div>
       </main>
     </div>
   )

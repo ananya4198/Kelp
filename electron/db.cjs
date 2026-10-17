@@ -55,6 +55,23 @@ db.exec(`
   );
 `)
 
+// `create table if not exists` is a no-op against a table that already
+// exists from an earlier run of the app, so columns added after someone's
+// first launch (name/goals/stand_count) never actually land on disk unless
+// we backfill them here.
+function ensureColumn(table, column, definition) {
+  const columns = db.prepare(`pragma table_info(${table})`).all().map((c) => c.name)
+  if (!columns.includes(column)) {
+    db.exec(`alter table ${table} add column ${column} ${definition}`)
+  }
+}
+
+ensureColumn('profile', 'name', "text not null default 'You'")
+ensureColumn('profile', 'stand_goal', 'integer not null default 8')
+ensureColumn('profile', 'bad_habit_limit', 'integer not null default 5')
+ensureColumn('profile', 'streak_goal', 'integer not null default 7')
+ensureColumn('daily_summaries', 'stand_count', 'integer not null default 0')
+
 function todayLocal() {
   const now = new Date()
   const offsetMs = now.getTimezoneOffset() * 60 * 1000
