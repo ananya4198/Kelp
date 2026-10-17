@@ -16,7 +16,8 @@ db.exec(`
     last_active_date text,
     stand_goal integer not null default 8,
     bad_habit_limit integer not null default 5,
-    streak_goal integer not null default 7
+    streak_goal integer not null default 7,
+    stand_reminder_minutes integer not null default 45
   );
 
   insert into profile (id) values (1)
@@ -70,6 +71,7 @@ ensureColumn('profile', 'name', "text not null default 'You'")
 ensureColumn('profile', 'stand_goal', 'integer not null default 8')
 ensureColumn('profile', 'bad_habit_limit', 'integer not null default 5')
 ensureColumn('profile', 'streak_goal', 'integer not null default 7')
+ensureColumn('profile', 'stand_reminder_minutes', 'integer not null default 45')
 ensureColumn('daily_summaries', 'stand_count', 'integer not null default 0')
 
 function todayLocal() {
@@ -185,20 +187,22 @@ function getProfile() {
 }
 
 /** Partial update of name/goals; omitted fields are left unchanged. */
-function updateProfile({ name, standGoal, badHabitLimit, streakGoal } = {}) {
+function updateProfile({ name, standGoal, badHabitLimit, streakGoal, standReminderMinutes } = {}) {
   const current = getProfile()
   db.prepare(
     `update profile set
        name = ?,
        stand_goal = ?,
        bad_habit_limit = ?,
-       streak_goal = ?
+       streak_goal = ?,
+       stand_reminder_minutes = ?
      where id = 1`,
   ).run(
     name ?? current.name,
     standGoal ?? current.stand_goal,
     badHabitLimit ?? current.bad_habit_limit,
     streakGoal ?? current.streak_goal,
+    standReminderMinutes ?? current.stand_reminder_minutes,
   )
   return getProfile()
 }

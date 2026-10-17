@@ -1,19 +1,30 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { DrawingUtils, PoseLandmarker } from '@mediapipe/tasks-vision'
 import { getPoseLandmarker } from '../lib/poseLandmarker'
-import { averageMetrics, classifyPosture, computeMetrics, DEFAULT_BASELINE } from '../lib/posture'
+import {
+  averageMetrics,
+  classifyPosture,
+  computeMetrics,
+  DEFAULT_BASELINE,
+  slouchSignals,
+} from '../lib/posture'
 
 // setTimeout instead of requestAnimationFrame so detection keeps running while
 // the Electron window is hidden (rAF pauses for hidden windows).
 const FRAME_INTERVAL_MS = 100
-// ~1.5s of frames averaged together before classifying.
-const SMOOTHING_WINDOW = 15
-const BASELINE_KEY = 'postureBaseline'
+// ~1s of frames averaged together before classifying.
+const SMOOTHING_WINDOW = 10
+// A new status must hold for this many frames (~0.8s) before it's shown, so
+// the badge doesn't flicker when you're right on a threshold.
+const HOLD_FRAMES = 8
+// v2 baselines also store shoulderWidth/headSize; older ones are ignored so the
+// user is prompted to recalibrate.
+const BASELINE_KEY = 'postureBaseline.v2'
 
 function loadBaseline() {
   try {
     const saved = JSON.parse(localStorage.getItem(BASELINE_KEY))
-    if (saved?.neckRatio > 0) return saved
+    if (saved?.neckRatio > 0 && saved?.shoulderWidth > 0) return saved
   } catch {
     // ignore corrupt / unavailable storage
   }
@@ -36,6 +47,7 @@ export function usePostureDetection({ videoRef, enabled }) {
   const [error, setError] = useState(null)
   const [status, setStatus] = useState('unknown')
   const [metrics, setMetrics] = useState(null)
+  const [signals, setSignals] = useState(null)
   const [isCalibrated, setIsCalibrated] = useState(() => loadBaseline() !== null)
 
   useEffect(() => {
@@ -43,6 +55,9 @@ export function usePostureDetection({ videoRef, enabled }) {
     let cancelled = false
     let timer = null
     const canvas = canvasRef.current
+    let shownStatus = 'unknown'
+    let candidate = 'unknown'
+    let candidateFrames = 0
 
     async function start() {
       try {
@@ -90,8 +105,18 @@ export function usePostureDetection({ videoRef, enabled }) {
         history.length = 0
       }
       const smoothed = averageMetrics(history)
+      const baseline = baselineRef.current ?? DEFAULT_BASELINE
       setMetrics(smoothed)
-      setStatus(classifyPosture(smoothed, baselineRef.current ?? DEFAULT_BASELINE))
+      setSignals(smoothed ? slouchSignals(smoothed, baseline) : null)
+
+      const next = classifyPosture(smoothed, baseline)
+      candidateFrames = next === candidate ? candidateFrames + 1 : 1
+      candidate = next
+      // 'unknown' (nobody in frame) shows right away; other changes must hold.
+      if (next !== shownStatus && (next === 'unknown' || candidateFrames >= HOLD_FRAMES)) {
+        shownStatus = next
+        setStatus(next)
+      }
     }
 
     start()
@@ -105,14 +130,20 @@ export function usePostureDetection({ videoRef, enabled }) {
       setError(null)
       setStatus('unknown')
       setMetrics(null)
+      setSignals(null)
     }
   }, [enabled, videoRef])
 
   /** Call while sitting up straight to record the user's "good" posture. */
   const calibrate = useCallback(() => {
+    // Need ~half a second of clear frames so one glitchy frame can't become the baseline.
+    if (recentMetrics.current.length < 5) return false
     const current = averageMetrics(recentMetrics.current)
-    if (!current) return false
-    const baseline = { neckRatio: current.neckRatio }
+    const baseline = {
+      neckRatio: current.neckRatio,
+      shoulderWidth: current.shoulderWidth,
+      headSize: current.headSize,
+    }
     baselineRef.current = baseline
     try {
       localStorage.setItem(BASELINE_KEY, JSON.stringify(baseline))
@@ -129,6 +160,7 @@ export function usePostureDetection({ videoRef, enabled }) {
     error,
     status,
     metrics,
+    signals,
     isCalibrated,
     calibrate,
   }
