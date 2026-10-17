@@ -136,7 +136,7 @@ export function useHabitMonitor() {
       streamRef.current = await startCamera(videoRef.current);
       if (!detectorsRef.current) detectorsRef.current = await createDetectors();
       const profile = await getProfile();
-      const minutes = profile?.stand_reminder_minutes || DEFAULT_STAND_REMINDER_MINUTES;
+      const minutes = profile?.stand_goal || DEFAULT_STAND_REMINDER_MINUTES;
       sitLimitMsRef.current = minutes * 60_000;
       setSitLimitSec(minutes * 60);
       const session = await startSession();

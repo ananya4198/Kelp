@@ -62,7 +62,7 @@ function GoalsModal({ profile, onClose, onSaved }) {
   const [standGoal, setStandGoal] = useState(profile.stand_goal)
   const [badHabitLimit, setBadHabitLimit] = useState(profile.bad_habit_limit)
   const [streakGoal, setStreakGoal] = useState(profile.streak_goal)
-  const [standReminderMinutes, setStandReminderMinutes] = useState(profile.stand_reminder_minutes ?? 45)
+  const [standReminderMinutes, setStandReminderMinutes] = useState(profile.stand_reminder_minutes ?? 100)
   const [saving, setSaving] = useState(false)
 
   async function handleSubmit(event) {
