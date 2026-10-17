@@ -8,9 +8,8 @@ import { showStandAlert } from '../lib/standAlert';
 
 const DEMO = true;
 const CFG = DEMO
-  ? { sitLimitMs: 20_000, sitRepeatMs: 30_000, breakAfterMs: 8_000, biteMs: 2_000, biteCooldownMs: 10_000 }
-  : { sitLimitMs: 45 * 60_000, sitRepeatMs: 10 * 60_000, breakAfterMs: 3 * 60_000, biteMs: 2_500, biteCooldownMs: 30_000 };
-
+  ? { sitLimitMs: 20_000, sitRepeatMs: 30_000, breakAfterMs: 8_000, biteWindow: 4, biteNeed: 3, biteCooldownMs: 10_000 }
+  : { sitLimitMs: 45 * 60_000, sitRepeatMs: 10 * 60_000, breakAfterMs: 3 * 60_000, biteWindow: 8, biteNeed: 6, biteCooldownMs: 30_000 };
 export function useHabitMonitor() {
   const videoRef = useRef(null);
   const streamRef = useRef(null);
@@ -18,11 +17,14 @@ export function useHabitMonitor() {
   const timerRef = useRef(null);
   const sessionIdRef = useRef(null);
   const st = useRef({ sittingStart: null, lastSeen: 0, handSince: null, lastBite: 0, lastSit: 0, bites: 0, breaks: 0 });
+  const win = useRef([]);
+  const pausedRef = useRef(false);
 
   const [running, setRunning] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [stats, setStats] = useState({ present: false, sittingSec: 0, bites: 0, breaks: 0 });
+  const [paused, setPaused] = useState(false);
 
   const tick = () => {
     const v = videoRef.current;
@@ -49,21 +51,25 @@ export function useHabitMonitor() {
       showStandAlert();
     }
 
-    // Nail biting (hand near mouth for a few seconds in a row)
-    if (facePresent && handToMouth) {
-      if (s.handSince === null) s.handSince = now;
-      else if (now - s.handSince >= CFG.biteMs && now - s.lastBite > CFG.biteCooldownMs) {
-        s.lastBite = now;
-        s.bites += 1;
-        toast('Hands away from your mouth 💅');
-        if (sessionIdRef.current) {
-          recordHabitEvent({ sessionId: sessionIdRef.current, habitType: 'nail_biting' })
-            .then(notifyStatsChanged)
-            .catch((err) => console.error('Failed to record habit event', err));
-        }
+    // Nail biting: most of the last few checks must look like biting
+    win.current.push(facePresent && handToMouth);
+    if (win.current.length > CFG.biteWindow) win.current.shift();
+    const hits = win.current.filter(Boolean).length;
+    if (
+      !pausedRef.current &&
+      win.current.length === CFG.biteWindow &&
+      hits >= CFG.biteNeed &&
+      now - s.lastBite > CFG.biteCooldownMs
+    ) {
+      s.lastBite = now;
+      s.bites += 1;
+      win.current = [];
+      toast('Stop biting your nails!');
+      if (sessionIdRef.current) {
+        recordHabitEvent({ sessionId: sessionIdRef.current, habitType: 'nail_biting' })
+          .then(notifyStatsChanged)
+          .catch((err) => console.error('Failed to record habit event', err));
       }
-    } else {
-      s.handSince = null;
     }
 
     setStats({ present: facePresent, sittingSec: Math.floor(sittingMs / 1000), bites: s.bites, breaks: s.breaks });
@@ -96,8 +102,11 @@ export function useHabitMonitor() {
     }
     setRunning(false);
   };
-
+  const togglePause = () => {
+  pausedRef.current = !pausedRef.current;
+  setPaused(pausedRef.current);
+};
   useEffect(() => stop, []); // clean up on unmount
 
-  return { videoRef, running, loading, error, stats, start, stop };
+  return { videoRef, running, loading, error, stats, start, stop, paused, togglePause };
 }
