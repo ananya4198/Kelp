@@ -64,7 +64,7 @@ export default function PostureStatus({ posture }) {
   }
 
   return (
-    <div className="space-y-3 rounded-xl bg-gray-100 p-4">
+    <div className="space-y-3 rounded-xl bg-sky-100 p-4">
       <div className="flex flex-wrap items-center gap-3">
         <span className={`rounded-full px-4 py-1 font-medium text-white ${badge.className}`}>
           {badge.label}
