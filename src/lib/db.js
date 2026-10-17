@@ -50,8 +50,8 @@ export function getProfile() {
 }
 
 /** Partial update of name/goals; omitted fields are left unchanged. */
-export function updateProfile({ name, standGoal, badHabitLimit, streakGoal } = {}) {
-  return requireDb().updateProfile({ name, standGoal, badHabitLimit, streakGoal })
+export function updateProfile({ name, standGoal, badHabitLimit, streakGoal, standReminderMinutes } = {}) {
+  return requireDb().updateProfile({ name, standGoal, badHabitLimit, streakGoal, standReminderMinutes })
 }
 
 /**

@@ -61,6 +61,7 @@ function GoalsModal({ profile, onClose, onSaved }) {
   const [standGoal, setStandGoal] = useState(profile.stand_goal)
   const [badHabitLimit, setBadHabitLimit] = useState(profile.bad_habit_limit)
   const [streakGoal, setStreakGoal] = useState(profile.streak_goal)
+  const [standReminderMinutes, setStandReminderMinutes] = useState(profile.stand_reminder_minutes ?? 45)
   const [saving, setSaving] = useState(false)
 
   async function handleSubmit(event) {
@@ -71,6 +72,7 @@ function GoalsModal({ profile, onClose, onSaved }) {
       standGoal: Number(standGoal),
       badHabitLimit: Number(badHabitLimit),
       streakGoal: Number(streakGoal),
+      standReminderMinutes: Number(standReminderMinutes),
     })
     setSaving(false)
     onSaved(updated)
@@ -98,6 +100,18 @@ function GoalsModal({ profile, onClose, onSaved }) {
             className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
             value={standGoal}
             onChange={(e) => setStandGoal(e.target.value)}
+          />
+        </label>
+
+        <label className="mb-3 block text-sm font-medium text-gray-700">
+          Remind me to stand after sitting for (minutes)
+          <input
+            type="number"
+            min="1"
+            max="240"
+            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+            value={standReminderMinutes}
+            onChange={(e) => setStandReminderMinutes(e.target.value)}
           />
         </label>
 

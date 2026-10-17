@@ -5,13 +5,13 @@ import PostureStatus from './PostureStatus';
 const fmt = (sec) => `${String(Math.floor(sec / 60)).padStart(2, '0')}:${String(sec % 60).padStart(2, '0')}`;
 
 export default function Monitor() {
-  const { videoRef, running, loading, error, stats, start, stop } = useHabitMonitor();
+  const { videoRef, running, loading, error, stats, sitLimitSec, start, stop } = useHabitMonitor();
   // Posture detection reuses the habit monitor's camera instead of opening its own.
   const posture = usePostureDetection({ videoRef, enabled: running });
   const { canvasRef: postureCanvasRef } = posture;
 
   return (
-    <div className="mx-auto max-w-md space-y-4 p-6">
+    <div className="mx-auto max-w-xl space-y-4 p-6">
       <h1 className="text-2xl font-bold">Desk Habits</h1>
       <p className="text-sm text-gray-500">Detection runs on your device. Photos are never saved or uploaded.</p>
 
@@ -35,6 +35,7 @@ export default function Monitor() {
         <div className="rounded-xl bg-gray-100 p-3">
           <div className="text-xl font-bold">{fmt(stats.sittingSec)}</div>
           <div className="text-xs">Sitting</div>
+          {running && <div className="text-xs text-gray-500">Stand reminder at {fmt(sitLimitSec)}</div>}
         </div>
         <div className="rounded-xl bg-gray-100 p-3">
           <div className="text-xl font-bold">{stats.bites}</div>
