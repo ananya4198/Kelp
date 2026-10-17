@@ -25,9 +25,19 @@ export function recordHabitEvent({ sessionId, habitType }) {
   return requireDb().recordHabitEvent({ sessionId, habitType })
 }
 
-/** Current gamification state: streaks, points, creature growth stage. */
+/** Records one "stood up when notified" event for today. */
+export function recordStandupFollowed() {
+  return requireDb().recordStandupFollowed()
+}
+
+/** Name, streak, points, creature growth stage, and goal targets. */
 export function getProfile() {
   return requireDb().getProfile()
+}
+
+/** Partial update of name/goals; omitted fields are left unchanged. */
+export function updateProfile({ name, standGoal, badHabitLimit, streakGoal } = {}) {
+  return requireDb().updateProfile({ name, standGoal, badHabitLimit, streakGoal })
 }
 
 /**
@@ -36,4 +46,9 @@ export function getProfile() {
  */
 export function getDailySummaries({ from, to } = {}) {
   return requireDb().getDailySummaries({ from, to })
+}
+
+/** Today's counters (stand count, bad habit count, etc.), zeroed if no events yet. */
+export function getTodaySummary() {
+  return requireDb().getTodaySummary()
 }

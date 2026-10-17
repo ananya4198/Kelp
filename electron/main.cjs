@@ -103,8 +103,11 @@ function registerDbHandlers() {
   ipcMain.handle('db:endSession', (_event, sessionId) => db.endSession(sessionId))
   ipcMain.handle('db:recordPostureSnapshot', (_event, payload) => db.recordPostureSnapshot(payload))
   ipcMain.handle('db:recordHabitEvent', (_event, payload) => db.recordHabitEvent(payload))
+  ipcMain.handle('db:recordStandupFollowed', () => db.recordStandupFollowed())
   ipcMain.handle('db:getProfile', () => db.getProfile())
+  ipcMain.handle('db:updateProfile', (_event, payload) => db.updateProfile(payload))
   ipcMain.handle('db:getDailySummaries', (_event, payload) => db.getDailySummaries(payload))
+  ipcMain.handle('db:getTodaySummary', () => db.getTodaySummary())
 }
 
 app.whenReady().then(() => {
