@@ -157,9 +157,7 @@ function Dashboard() {
         <h1 className="mb-6 text-2xl font-semibold text-white">Hi, {profile.name}</h1>
 
         <div className="mb-6 flex justify-center">
-          <div className="rounded-full bg-cyan-300/10 p-4 shadow-[0_0_60px_rgba(34,211,238,0.25)] ring-1 ring-white/20">
-            <img src={petImage} alt="Your sea lion" className="h-40 w-40 object-contain" />
-          </div>
+          <img src={petImage} alt="Your sea lion" className="h-48 w-48 object-contain" />
         </div>
 
         <div className="flex flex-col gap-6">
