@@ -8,11 +8,15 @@ const db = new DatabaseSync(dbPath)
 db.exec(`
   create table if not exists profile (
     id integer primary key check (id = 1),
+    name text not null default 'You',
     creature_stage integer not null default 0,
     points integer not null default 0,
     current_streak integer not null default 0,
     longest_streak integer not null default 0,
-    last_active_date text
+    last_active_date text,
+    stand_goal integer not null default 8,
+    bad_habit_limit integer not null default 5,
+    streak_goal integer not null default 7
   );
 
   insert into profile (id) values (1)
@@ -46,6 +50,7 @@ db.exec(`
     good_posture_seconds integer not null default 0,
     bad_posture_seconds integer not null default 0,
     habit_event_count integer not null default 0,
+    stand_count integer not null default 0,
     streak_maintained integer not null default 0
   );
 `)
@@ -148,8 +153,37 @@ function recordHabitEvent({ sessionId, habitType }) {
   ).run(day)
 }
 
+/** Records one "stood up when notified" event for today. */
+function recordStandupFollowed() {
+  const day = todayLocal()
+  db.prepare(
+    `insert into daily_summaries (day, stand_count)
+     values (?, 1)
+     on conflict (day) do update set stand_count = stand_count + 1`,
+  ).run(day)
+}
+
 function getProfile() {
   return db.prepare('select * from profile where id = 1').get()
+}
+
+/** Partial update of name/goals; omitted fields are left unchanged. */
+function updateProfile({ name, standGoal, badHabitLimit, streakGoal } = {}) {
+  const current = getProfile()
+  db.prepare(
+    `update profile set
+       name = ?,
+       stand_goal = ?,
+       bad_habit_limit = ?,
+       streak_goal = ?
+     where id = 1`,
+  ).run(
+    name ?? current.name,
+    standGoal ?? current.stand_goal,
+    badHabitLimit ?? current.bad_habit_limit,
+    streakGoal ?? current.streak_goal,
+  )
+  return getProfile()
 }
 
 function getDailySummaries({ from, to } = {}) {
@@ -160,11 +194,31 @@ function getDailySummaries({ from, to } = {}) {
     .all(fromDate, toDate)
 }
 
+/** Today's counters, defaulting to zero if nothing has happened yet today. */
+function getTodaySummary() {
+  const day = todayLocal()
+  const row = db.prepare('select * from daily_summaries where day = ?').get(day)
+  return (
+    row ?? {
+      day,
+      total_sitting_seconds: 0,
+      good_posture_seconds: 0,
+      bad_posture_seconds: 0,
+      habit_event_count: 0,
+      stand_count: 0,
+      streak_maintained: 0,
+    }
+  )
+}
+
 module.exports = {
   startSession,
   endSession,
   recordPostureSnapshot,
   recordHabitEvent,
+  recordStandupFollowed,
   getProfile,
+  updateProfile,
   getDailySummaries,
+  getTodaySummary,
 }

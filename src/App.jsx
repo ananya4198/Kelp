@@ -1,122 +1,183 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import './App.css'
+import { useEffect, useState } from 'react'
+import { getProfile, getTodaySummary, updateProfile } from './lib/db'
 
-function App() {
-  const [count, setCount] = useState(0)
+const ROW_STYLES = {
+  green: { label: 'bg-green-400 text-green-950', fill: 'bg-green-500' },
+  red: { label: 'bg-red-400 text-red-950', fill: 'bg-red-500' },
+  yellow: { label: 'bg-yellow-200 text-yellow-900', fill: 'bg-yellow-300' },
+}
+
+function clampPercent(value, goal) {
+  if (!goal) return 0
+  return Math.max(0, Math.min(100, (value / goal) * 100))
+}
+
+function ProgressRow({ color, label, percent }) {
+  const styles = ROW_STYLES[color]
+  return (
+    <div className="flex items-center gap-4">
+      <span className={`shrink-0 rounded-full px-5 py-2 font-medium ${styles.label}`}>{label}</span>
+      <div className="h-10 flex-1 overflow-hidden rounded-full border border-black/10 bg-gray-200">
+        <div
+          className={`h-full rounded-full transition-all duration-500 ${styles.fill}`}
+          style={{ width: `${percent}%` }}
+        />
+      </div>
+    </div>
+  )
+}
+
+function GoalsModal({ profile, onClose, onSaved }) {
+  const [name, setName] = useState(profile.name)
+  const [standGoal, setStandGoal] = useState(profile.stand_goal)
+  const [badHabitLimit, setBadHabitLimit] = useState(profile.bad_habit_limit)
+  const [streakGoal, setStreakGoal] = useState(profile.streak_goal)
+  const [saving, setSaving] = useState(false)
+
+  async function handleSubmit(event) {
+    event.preventDefault()
+    setSaving(true)
+    const updated = await updateProfile({
+      name,
+      standGoal: Number(standGoal),
+      badHabitLimit: Number(badHabitLimit),
+      streakGoal: Number(streakGoal),
+    })
+    setSaving(false)
+    onSaved(updated)
+  }
 
   return (
-    <>
-      <section id="center">
-        <h1>HELLO WORLD!!!!!</h1>
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <div className="fixed inset-0 flex items-center justify-center bg-black/30 p-4">
+      <form onSubmit={handleSubmit} className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
+        <h2 className="mb-4 text-lg font-semibold">Set Goals</h2>
 
-      <div className="ticks"></div>
+        <label className="mb-3 block text-sm font-medium text-gray-700">
+          Name
+          <input
+            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+        </label>
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+        <label className="mb-3 block text-sm font-medium text-gray-700">
+          Daily standup goal
+          <input
+            type="number"
+            min="1"
+            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+            value={standGoal}
+            onChange={(e) => setStandGoal(e.target.value)}
+          />
+        </label>
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+        <label className="mb-3 block text-sm font-medium text-gray-700">
+          Bad habit limit (per day)
+          <input
+            type="number"
+            min="1"
+            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+            value={badHabitLimit}
+            onChange={(e) => setBadHabitLimit(e.target.value)}
+          />
+        </label>
+
+        <label className="mb-5 block text-sm font-medium text-gray-700">
+          Streak goal (days)
+          <input
+            type="number"
+            min="1"
+            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+            value={streakGoal}
+            onChange={(e) => setStreakGoal(e.target.value)}
+          />
+        </label>
+
+        <div className="flex justify-end gap-2">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-full px-4 py-2 font-medium text-gray-600 hover:bg-gray-100"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={saving}
+            className="rounded-full bg-blue-400 px-6 py-2 font-medium text-white hover:bg-blue-500 disabled:opacity-60"
+          >
+            {saving ? 'Saving…' : 'Save'}
+          </button>
+        </div>
+      </form>
+    </div>
+  )
+}
+
+function App() {
+  const [profile, setProfile] = useState(null)
+  const [today, setToday] = useState(null)
+  const [error, setError] = useState(null)
+  const [goalsOpen, setGoalsOpen] = useState(false)
+
+  useEffect(() => {
+    Promise.all([getProfile(), getTodaySummary()])
+      .then(([profileResult, todayResult]) => {
+        setProfile(profileResult)
+        setToday(todayResult)
+      })
+      .catch((err) => setError(err.message))
+  }, [])
+
+  if (error) {
+    return (
+      <div className="flex h-screen items-center justify-center p-6 text-center text-gray-600">
+        {error}
+      </div>
+    )
+  }
+
+  if (!profile || !today) {
+    return <div className="flex h-screen items-center justify-center text-gray-500">Loading…</div>
+  }
+
+  const standPercent = clampPercent(today.stand_count, profile.stand_goal)
+  const badHabitPercent = clampPercent(today.habit_event_count, profile.bad_habit_limit)
+  const streakPercent = clampPercent(profile.current_streak, profile.streak_goal)
+
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-gray-50 p-6">
+      <div className="w-full max-w-xl rounded-2xl border border-black/10 bg-white p-8 shadow-sm">
+        <h1 className="mb-6 text-xl font-semibold text-gray-800">Hi, {profile.name}</h1>
+
+        <div className="flex flex-col gap-6">
+          <ProgressRow color="green" label="Stand Progress" percent={standPercent} />
+          <ProgressRow color="red" label="Bad Habits Today" percent={badHabitPercent} />
+          <ProgressRow color="yellow" label={`Streak 🔥 ${profile.current_streak}`} percent={streakPercent} />
+        </div>
+
+        <div className="mt-8 flex justify-center">
+          <button
+            onClick={() => setGoalsOpen(true)}
+            className="rounded-full bg-blue-400 px-6 py-2 font-medium text-white hover:bg-blue-500"
+          >
+            Set Goals
+          </button>
+        </div>
+      </div>
+
+      {goalsOpen && (
+        <GoalsModal
+          profile={profile}
+          onClose={() => setGoalsOpen(false)}
+          onSaved={(updated) => {
+            setProfile(updated)
+            setGoalsOpen(false)
+          }}
+        />
+      )}
+    </div>
   )
 }
 
