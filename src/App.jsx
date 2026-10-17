@@ -165,21 +165,21 @@ function Dashboard() {
         <div className="flex flex-col gap-6">
           <ProgressRow color="green" label="Good Habits Today" percent={standPercent} />
           <ProgressRow color="red" label="Bad Habits Today" percent={badHabitPercent} />
-          <ProgressRow color="yellow" label={`Streak 🔥 ${profile.current_streak}`} percent={streakPercent} />
+          <ProgressRow color="yellow" label={`Streak ${profile.current_streak} 🔥`} percent={streakPercent} />
         </div>
 
         <div className="mt-6 grid grid-cols-3 gap-3 text-center">
           <div className="rounded-xl bg-white/10 p-3">
             <div className="text-lg font-bold text-white"> Every {profile.stand_goal} minutes </div>
-            <div className="text-xs text-cyan-100/70">Standing goal</div>
+            <div className="text-xs text-cyan-100/70">Standing Goal</div>
+          </div>
+          <div className="rounded-xl bg-white/10 p-3">
+            <div className="text-lg font-bold text-white">{today.stand_count} today</div>
+            <div className="text-xs text-cyan-100/70">Good Habits </div>
           </div>
           <div className="rounded-xl bg-white/10 p-3">
             <div className="text-lg font-bold text-white">{today.habit_event_count} today</div>
-            <div className="text-xs text-cyan-100/70">Bad habit alerts </div>
-          </div>
-          <div className="rounded-xl bg-white/10 p-3">
-            <div className="text-lg font-bold text-white">{profile.current_streak} days</div>
-            <div className="text-xs text-cyan-100/70">Current Streak</div>
+            <div className="text-xs text-cyan-100/70">Bad Habit Alerts</div>
           </div>
         </div>
 
