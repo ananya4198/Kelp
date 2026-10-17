@@ -76,7 +76,7 @@ export default function PostureStatus({ posture }) {
           className={`rounded-lg border px-4 py-1.5 font-medium shadow-sm transition-all duration-150 active:translate-y-0.5 active:scale-95 active:shadow-none disabled:cursor-not-allowed ${
             justCalibrated
               ? 'scale-105 border-emerald-600 bg-emerald-500 text-white disabled:opacity-100'
-              : 'border-gray-300 bg-white hover:bg-gray-50 disabled:opacity-50'
+              : 'border-gray-300 bg-sky-700 hover:bg-sky-600 disabled:opacity-50'
           }`}
         >
           {justCalibrated ? '✓ Calibrated!' : isCalibrated ? 'Recalibrate' : 'Calibrate'}
