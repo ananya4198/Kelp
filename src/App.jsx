@@ -157,7 +157,7 @@ function Dashboard() {
         <h1 className="mb-6 text-2xl font-semibold text-white">Hi, {profile.name}</h1>
 
         <div className="mb-6 flex justify-center">
-          <img src={petImage} alt="Your sea lion" className="h-48 w-48 object-contain" />
+          <img src={petImage} alt="Your sea lion" className="float h-96 w-96 object-contain" />
         </div>
 
         <div className="flex flex-col gap-6">
