@@ -171,6 +171,13 @@ function drawPose(canvas, ctx, drawer, video, landmarks) {
   if (canvas.height !== video.videoHeight) canvas.height = video.videoHeight
   ctx.clearRect(0, 0, canvas.width, canvas.height)
   if (!landmarks) return
-  drawer.drawConnectors(landmarks, PoseLandmarker.POSE_CONNECTIONS, { color: '#22d3ee', lineWidth: 3 })
-  drawer.drawLandmarks(landmarks, { color: '#f97316', radius: 3 })
+  // Skip the face points (eyes, nose, mouth, ears) and only draw the body.
+  drawer.drawConnectors(landmarks, BODY_CONNECTIONS, { color: '#22d3ee', lineWidth: 3 })
+  drawer.drawLandmarks(landmarks.slice(FIRST_BODY_LANDMARK), { color: '#f97316', radius: 3 })
 }
+
+// Pose landmarks 0-10 are the face; 11+ are shoulders, arms, hips and legs.
+const FIRST_BODY_LANDMARK = 11
+const BODY_CONNECTIONS = PoseLandmarker.POSE_CONNECTIONS.filter(
+  ({ start, end }) => start >= FIRST_BODY_LANDMARK && end >= FIRST_BODY_LANDMARK,
+)

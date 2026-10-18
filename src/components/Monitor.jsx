@@ -1,7 +1,9 @@
 import { useHabitMonitor } from '../hooks/useHabitMonitor';
 import { usePostureDetection } from '../hooks/usePostureDetection';
 import { usePostureLogger } from '../hooks/usePostureLogger';
+import { useCalibrationCountdown } from '../hooks/useCalibrationCountdown';
 import PostureStatus from './PostureStatus';
+import CalibrationOverlay from './CalibrationOverlay';
 
 const fmt = (sec) => `${String(Math.floor(sec / 60)).padStart(2, '0')}:${String(sec % 60).padStart(2, '0')}`;
 
@@ -21,7 +23,13 @@ export default function Monitor() {
   // Posture detection reuses the habit monitor's camera instead of opening its own.
   const posture = usePostureDetection({ videoRef, enabled: running });
   usePostureLogger({ sessionId, status: posture.status });
+  const countdown = useCalibrationCountdown(posture.calibrate);
   const { canvasRef: postureCanvasRef } = posture;
+
+  const endSession = () => {
+    countdown.cancel();
+    stop();
+  };
 
   return (
     <div className="mx-auto max-w-xl space-y-4 p-6">
@@ -31,10 +39,11 @@ export default function Monitor() {
       <div className="relative overflow-hidden rounded-2xl bg-slate-950 shadow-[0_0_40px_rgba(34,211,238,0.2)] ring-1 ring-white/20">
         <video ref={videoRef} playsInline muted className="block w-full" />
         <canvas ref={postureCanvasRef} className="pointer-events-none absolute inset-0 h-full w-full" />
+        <CalibrationOverlay countdown={countdown} />
       </div>
 
       <button
-        onClick={running ? stop : start}
+        onClick={running ? endSession : start}
         disabled={loading}
         className="btn-primary w-full px-4 py-3"
       >
@@ -46,7 +55,7 @@ export default function Monitor() {
         {paused ? 'Resume nail-biting alerts' : 'Pause nail-biting alerts'}
       </button>
 
-      <PostureStatus posture={posture} />
+      <PostureStatus posture={posture} countdown={countdown} />
 
       <div className="grid grid-cols-2 gap-3 text-center">
         <Stat
@@ -54,9 +63,9 @@ export default function Monitor() {
           label="Sitting"
           note={running ? `Stand reminder at ${fmt(sitLimitSec)}` : null}
         />
-        <Stat value={stats.bites} label="Nail-biting alerts" />
-        <Stat value={stats.expectedStandups} label="Stand alerts sent" />
         <Stat value={`${stats.performedStandups}/${stats.expectedStandups}`} label="Standups performed" />
+        <Stat value={stats.expectedStandups} label="Stand alerts sent" />
+        <Stat value={stats.bites} label="Nail-biting alerts" />
       </div>
     </div>
   );

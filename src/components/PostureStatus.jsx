@@ -1,16 +1,11 @@
-import { useEffect, useState } from 'react'
-import { toast } from 'sonner'
 import { THRESHOLDS } from '../lib/posture'
 
 const STATUS_STYLES = {
-  good: { label: 'Good posture', className: 'bg-emerald-500' },
-  slouching: { label: 'Slouching', className: 'bg-red-500' },
-  leaning: { label: 'Leaning', className: 'bg-amber-500' },
-  unknown: { label: 'No one detected', className: 'bg-slate-500' },
+  good: { label: 'Good posture', className: 'bg-teal-300 text-teal-950' },
+  slouching: { label: 'Slouching', className: 'bg-rose-400 text-rose-950' },
+  leaning: { label: 'Leaning', className: 'bg-amber-300 text-amber-950' },
+  unknown: { label: 'No one detected', className: 'bg-white/15 text-cyan-100' },
 }
-
-// How long the button stays in its green "Calibrated!" state after a click.
-const CONFIRM_MS = 1500
 
 /** One slouch signal as "% worse than calibrated", red once it passes its limit. */
 function Signal({ label, value, limit }) {
@@ -18,7 +13,7 @@ function Signal({ label, value, limit }) {
     return (
       <div>
         <dt>{label}</dt>
-        <dd className="font-mono text-gray-400">—</dd>
+        <dd className="font-mono text-cyan-100/40">—</dd>
       </div>
     )
   }
@@ -26,82 +21,69 @@ function Signal({ label, value, limit }) {
   return (
     <div>
       <dt>{label}</dt>
-      <dd className={`font-mono ${over ? 'font-bold text-red-600' : ''}`}>
-        {Math.round(value * 100)}% <span className="text-gray-400">/ {Math.round(limit * 100)}%</span>
+      <dd className={`font-mono ${over ? 'font-bold text-rose-300' : 'text-white'}`}>
+        {Math.round(value * 100)}% <span className="text-cyan-100/40">/ {Math.round(limit * 100)}%</span>
       </dd>
     </div>
   )
 }
 
-/** Posture badge, calibrate button and live numbers. Takes usePostureDetection's result. */
-export default function PostureStatus({ posture }) {
-  const { state, error, status, metrics, signals, isCalibrated, calibrate } = posture
-  const [justCalibrated, setJustCalibrated] = useState(false)
-
-  useEffect(() => {
-    if (!justCalibrated) return
-    const timer = setTimeout(() => setJustCalibrated(false), CONFIRM_MS)
-    return () => clearTimeout(timer)
-  }, [justCalibrated])
+/**
+ * Posture badge, calibrate button and live numbers. Takes usePostureDetection's
+ * result and useCalibrationCountdown's result.
+ */
+export default function PostureStatus({ posture, countdown }) {
+  const { state, error, status, metrics, signals, isCalibrated } = posture
 
   if (state === 'idle') return null
   if (state === 'error') {
-    return <p className="text-red-600">Posture detection failed: {error?.message ?? String(error)}</p>
+    return <p className="text-rose-300">Posture detection failed: {error?.message ?? String(error)}</p>
   }
   if (state === 'loading') {
-    return <p className="text-sm text-gray-500">Loading posture model…</p>
+    return <p className="text-sm text-cyan-100/70">Loading posture model…</p>
   }
 
   const badge = STATUS_STYLES[status]
 
-  function handleCalibrate() {
-    if (calibrate()) {
-      setJustCalibrated(true)
-      toast.success('Posture calibrated! This is now your "good posture".')
-    } else {
-      toast.error("Couldn't see your head and shoulders clearly. Try again.")
-    }
-  }
+  let buttonLabel = isCalibrated ? 'Recalibrate' : 'Calibrate'
+  if (countdown.isCountingDown) buttonLabel = `Sit up straight… Calibrating in ${countdown.secondsLeft}s`
+  else if (countdown.justCalibrated) buttonLabel = '✓ Calibrated!'
 
   return (
-    <div className="space-y-3 rounded-xl bg-sky-100 p-4">
+    <div className="glass space-y-4 p-5">
       <div className="flex flex-wrap items-center gap-3">
-        <span className={`rounded-full px-4 py-1 font-medium text-white ${badge.className}`}>
-          {badge.label}
-        </span>
+        <span className={`rounded-full px-4 py-1.5 font-medium ${badge.className}`}>{badge.label}</span>
         <button
           type="button"
-          onClick={handleCalibrate}
-          disabled={status === 'unknown' || justCalibrated}
-          className={`rounded-lg border px-4 py-1.5 font-medium shadow-sm transition-all duration-150 active:translate-y-0.5 active:scale-95 active:shadow-none disabled:cursor-not-allowed ${
-            justCalibrated
-              ? 'scale-105 border-emerald-600 bg-emerald-500 text-white disabled:opacity-100'
-              : 'border-gray-300 bg-sky-700 hover:bg-sky-600 disabled:opacity-50'
-          }`}
+          onClick={countdown.start}
+          disabled={status === 'unknown' || countdown.isCountingDown || countdown.justCalibrated}
+          className={`btn-primary px-5 py-2 active:scale-95 ${
+            countdown.isCountingDown || countdown.justCalibrated ? 'disabled:opacity-100' : ''
+          } ${countdown.isCountingDown ? 'animate-pulse' : ''}`}
         >
-          {justCalibrated ? '✓ Calibrated!' : isCalibrated ? 'Recalibrate' : 'Calibrate'}
+          {buttonLabel}
         </button>
       </div>
 
-      {!isCalibrated && (
-        <p className="rounded-lg bg-amber-100 px-3 py-2 text-sm text-amber-900">
-          Sit up straight, then click <b>Calibrate</b>. Slouch detection is much more accurate once it
-          knows your good posture.
+      {!isCalibrated && !countdown.isCountingDown && (
+        <p className="rounded-xl border border-amber-200/30 bg-amber-200/10 px-3 py-2 text-sm text-amber-100">
+          Click <b>Calibrate</b>, then sit up straight during the countdown. Slouch detection is much more
+          accurate once it knows your good posture.
         </p>
       )}
 
       {metrics && signals && (
-        <dl className="grid grid-cols-3 gap-2 text-xs text-gray-600">
+        <dl className="grid grid-cols-3 gap-3 text-xs text-cyan-100/70">
           <Signal label="Head sinking" value={signals.neckDrop} limit={THRESHOLDS.neckDrop} />
           <Signal label="Leaning in" value={signals.leanIn} limit={THRESHOLDS.leanIn} />
           <Signal label="Head forward" value={signals.headForward} limit={THRESHOLDS.headForward} />
           <div>
             <dt>Shoulder tilt</dt>
-            <dd className="font-mono">{metrics.shoulderTiltDeg.toFixed(1)}°</dd>
+            <dd className="font-mono text-white">{metrics.shoulderTiltDeg.toFixed(1)}°</dd>
           </div>
           <div>
             <dt>Head offset</dt>
-            <dd className="font-mono">{metrics.headOffset.toFixed(2)}</dd>
+            <dd className="font-mono text-white">{metrics.headOffset.toFixed(2)}</dd>
           </div>
         </dl>
       )}
