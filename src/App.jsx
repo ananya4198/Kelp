@@ -8,7 +8,7 @@ import { onStatsChanged } from './lib/statsBus'
 import healthyPet from '../pet_imgs/healthy.png'
 import sadPet from '../pet_imgs/sad.png'
 import verySadPet from '../pet_imgs/verysad.png'
-
+import KelpLogo from './components/KelpLogo'
 /** Sea lion's mood worsens as bad habits pile up or standup alerts go unanswered. */
 function petImageFor({ badHabits, standupGap }) {
   if (badHabits > 5 || standupGap > 5) return verySadPet
@@ -220,6 +220,7 @@ function App() {
       <Toaster position="top-right" theme="dark" richColors />
 
       <nav className="relative z-10 flex justify-center gap-2 border-b border-white/10 bg-slate-950/40 p-3 backdrop-blur">
+        <KelpLogo className="absolute left-5 top-1/2 hidden -translate-y-1/2 sm:flex" />
         {TABS.map((t) => (
           <button
             key={t.id}

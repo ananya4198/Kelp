@@ -23,7 +23,7 @@ function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
-    title: 'Posture Monitor',
+    title: 'Kelp',
     webPreferences: {
       preload: path.join(__dirname, 'preload.cjs'),
       contextIsolation: true,
@@ -114,11 +114,11 @@ function showWindow() {
 function createTray() {
   const iconPath = path.join(__dirname, 'assets/tray-icon.png')
   tray = new Tray(nativeImage.createFromPath(iconPath))
-  tray.setToolTip('Posture Monitor')
+  tray.setToolTip('Kelp')
 
   const buildMenu = () =>
     Menu.buildFromTemplate([
-      { label: 'Open Posture Monitor', click: showWindow },
+      { label: 'Open Kelp', click: showWindow },
       { type: 'separator' },
       {
         label: 'Open at Login',
