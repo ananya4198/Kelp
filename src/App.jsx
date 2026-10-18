@@ -3,6 +3,7 @@ import { Toaster } from 'sonner'
 import Monitor from './components/Monitor'
 import Bubbles from './components/Bubbles'
 import StreakRow from './components/StreakRow'
+import PreferencesCard from './components/PreferencesCard'
 import { getProfile, getTodaySummary, updateProfile } from './lib/db'
 import { onStatsChanged } from './lib/statsBus'
 import healthyPet from '../pet_imgs/healthy.png'
@@ -152,7 +153,7 @@ function Dashboard() {
   const petImage = petImageFor({ badHabits: today.habit_event_count, standupGap })
 
   return (
-    <div className="flex min-h-full items-center justify-center p-6">
+    <div className="flex min-h-full flex-col items-center justify-center gap-6 p-6">
       <div className="glass w-full max-w-xl p-8">
         <h1 className="mb-6 text-2xl font-semibold text-white">Hi, {profile.name}</h1>
 
@@ -187,6 +188,8 @@ function Dashboard() {
           </button>
         </div>
       </div>
+
+      <PreferencesCard />
 
       {goalsOpen && (
         <GoalsModal

@@ -30,6 +30,16 @@ export const THRESHOLDS = {
   headOffset: 0.25,
 }
 
+// Posture tolerance setting: multiplies every threshold above. 'balanced' uses
+// THRESHOLDS as-is; 'gentle' allows more slouch/tilt before flagging (good if
+// you often glance down at desk notes); 'strict' flags smaller changes.
+export const TOLERANCE_SCALE = { gentle: 1.5, balanced: 1, strict: 0.7 }
+
+export function thresholdsFor(tolerance = 'balanced') {
+  const scale = TOLERANCE_SCALE[tolerance] ?? 1
+  return Object.fromEntries(Object.entries(THRESHOLDS).map(([key, value]) => [key, value * scale]))
+}
+
 const visible = (lm) => lm && (lm.visibility ?? 1) >= MIN_VISIBILITY
 
 /**
@@ -84,21 +94,21 @@ export function slouchSignals(metrics, baseline = DEFAULT_BASELINE) {
   }
 }
 
-export function classifyPosture(metrics, baseline = DEFAULT_BASELINE) {
+export function classifyPosture(metrics, baseline = DEFAULT_BASELINE, thresholds = THRESHOLDS) {
   if (!metrics) return 'unknown'
 
   const { neckDrop, leanIn, headForward } = slouchSignals(metrics, baseline)
   if (
-    neckDrop > THRESHOLDS.neckDrop ||
-    (neckDrop > THRESHOLDS.neckDropWithLeanIn && leanIn > THRESHOLDS.leanIn) ||
-    headForward > THRESHOLDS.headForward
+    neckDrop > thresholds.neckDrop ||
+    (neckDrop > thresholds.neckDropWithLeanIn && leanIn > thresholds.leanIn) ||
+    headForward > thresholds.headForward
   ) {
     return 'slouching'
   }
 
   if (
-    metrics.shoulderTiltDeg > THRESHOLDS.shoulderTiltDeg ||
-    Math.abs(metrics.headOffset) > THRESHOLDS.headOffset
+    metrics.shoulderTiltDeg > thresholds.shoulderTiltDeg ||
+    Math.abs(metrics.headOffset) > thresholds.headOffset
   ) {
     return 'leaning'
   }

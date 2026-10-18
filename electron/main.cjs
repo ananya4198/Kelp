@@ -160,12 +160,18 @@ function registerDbHandlers() {
   ipcMain.handle('db:getTodaySummary', () => db.getTodaySummary())
 }
 
+// Windows only shows desktop notifications for apps with an AppUserModelID.
+// In dev there's no installed shortcut, so use the Electron binary's path.
+if (process.platform === 'win32') {
+  app.setAppUserModelId(app.isPackaged ? 'com.technica2026.posturemonitor' : process.execPath)
+}
+
 app.whenReady().then(() => {
-  // Auto-grant camera/mic access requested via getUserMedia. The OS-level
-  // camera permission prompt (macOS TCC) still happens separately and is
-  // unaffected by this.
+  // Auto-grant camera/mic access requested via getUserMedia, and desktop
+  // notifications (the user opts in from the Dashboard preferences). The
+  // OS-level camera permission prompt (macOS TCC) still happens separately.
   session.defaultSession.setPermissionRequestHandler((_webContents, permission, callback) => {
-    callback(permission === 'media')
+    callback(permission === 'media' || permission === 'notifications')
   })
 
   registerDbHandlers()

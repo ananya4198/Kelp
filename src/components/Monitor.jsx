@@ -1,6 +1,8 @@
 import { useHabitMonitor } from '../hooks/useHabitMonitor';
 import { usePostureDetection } from '../hooks/usePostureDetection';
 import { usePostureLogger } from '../hooks/usePostureLogger';
+import { useBadPostureNotifier } from '../hooks/useBadPostureNotifier';
+import { usePreferences } from '../lib/preferences';
 import { useCalibrationCountdown } from '../hooks/useCalibrationCountdown';
 import PostureStatus from './PostureStatus';
 import CalibrationOverlay from './CalibrationOverlay';
@@ -21,8 +23,10 @@ export default function Monitor() {
   const { videoRef, running, loading, error, stats, sitLimitSec, start, stop, paused, togglePause, sessionId } =
     useHabitMonitor();
   // Posture detection reuses the habit monitor's camera instead of opening its own.
-  const posture = usePostureDetection({ videoRef, enabled: running });
+  const { postureTolerance } = usePreferences();
+  const posture = usePostureDetection({ videoRef, enabled: running, tolerance: postureTolerance });
   usePostureLogger({ sessionId, status: posture.status });
+  useBadPostureNotifier({ status: posture.status, active: running });
   const countdown = useCalibrationCountdown(posture.calibrate);
   const { canvasRef: postureCanvasRef } = posture;
 
