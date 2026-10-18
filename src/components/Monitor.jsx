@@ -65,7 +65,7 @@ export default function Monitor() {
         <Stat
           value={fmt(stats.sittingSec)}
           label="Sitting"
-          note={running ? `Stand reminder at ${fmt(sitLimitSec)}` : null}
+          note={running ? `Next stand reminder at ${fmt(stats.nextReminderSec ?? sitLimitSec)}` : null}
         />
         <Stat value={`${stats.performedStandups}/${stats.expectedStandups}`} label="Standups performed" />
         <Stat value={stats.expectedStandups} label="Stand alerts sent" />

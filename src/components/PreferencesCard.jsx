@@ -72,7 +72,6 @@ export default function PreferencesCard() {
           <SlidersIcon className="h-5 w-5 text-teal-300" />
           Motion Sensor &amp; Notification Preferences
         </h2>
-        <span className="text-sm text-cyan-100/50">Client-Side Preferences</span>
       </div>
 
       <div className="flex items-center justify-between gap-6">

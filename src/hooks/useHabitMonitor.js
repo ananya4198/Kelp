@@ -16,12 +16,12 @@ import { notifyStatsChanged } from '../lib/statsBus';
 import { showStandAlert } from '../lib/standAlert';
 
 // How long you can sit before the stand-up popup comes from the user's
-// "Remind me to stand" setting (profile.stand_reminder_minutes), read when a
-// session starts. sitRepeatMs is how often it re-reminds if you ignore it.
+// "Remind me to stand" setting (profile.stand_goal), read when a session
+// starts, and repeats every goal interval if the user keeps sitting.
 const DEMO = true;
 const CFG = DEMO
-  ? { sitRepeatMs: 30_000, breakAfterMs: 8_000, biteWindow: 4, biteNeed: 3, biteCooldownMs: 10_000 }
-  : { sitRepeatMs: 10 * 60_000, breakAfterMs: 3 * 60_000, biteWindow: 8, biteNeed: 6, biteCooldownMs: 30_000 };
+  ? { breakAfterMs: 8_000, biteWindow: 4, biteNeed: 3, biteCooldownMs: 10_000 }
+  : { breakAfterMs: 3 * 60_000, biteWindow: 8, biteNeed: 6, biteCooldownMs: 30_000 };
 const DEFAULT_STAND_REMINDER_MINUTES = 45;
 
 const INITIAL_STATS = {
@@ -37,7 +37,7 @@ const initialTracking = () => ({
   lastSeen: 0,
   handSince: null,
   lastBite: 0,
-  lastSit: 0,
+  remindersThisSit: 0,
   bites: 0,
   breaks: 0,
   expectedStandups: 0,
@@ -90,8 +90,14 @@ export function useHabitMonitor() {
       }
     }
     const sittingMs = s.sittingStart ? now - s.sittingStart : 0;
-    if (sittingMs > sitLimitMsRef.current && now - s.lastSit > CFG.sitRepeatMs) {
-      s.lastSit = now;
+    // Remind at every multiple of the user's goal while they keep sitting
+    // (e.g. a 2 min goal reminds at 2:00, 4:00, 6:00). A break resets the
+    // sitting timer, so the next reminder is a full goal after they return.
+    const nextReminderMs = (s.remindersThisSit + 1) * sitLimitMsRef.current;
+    if (s.sittingStart === null) {
+      s.remindersThisSit = 0;
+    } else if (sittingMs >= nextReminderMs) {
+      s.remindersThisSit += 1;
       s.expectedStandups += 1;
       showStandAlert();
       if (sessionIdRef.current) {
@@ -130,6 +136,7 @@ export function useHabitMonitor() {
       breaks: s.breaks,
       expectedStandups: s.expectedStandups,
       performedStandups: s.performedStandups,
+      nextReminderSec: ((s.remindersThisSit + 1) * sitLimitMsRef.current) / 1000,
     });
   };
 
