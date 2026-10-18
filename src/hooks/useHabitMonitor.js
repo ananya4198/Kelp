@@ -20,9 +20,14 @@ import { showStandAlert } from '../lib/standAlert';
 // starts, and repeats every goal interval if the user keeps sitting.
 const DEMO = true;
 const CFG = DEMO
-  ? { breakAfterMs: 8_000, biteWindow: 4, biteNeed: 3, biteCooldownMs: 10_000 }
-  : { breakAfterMs: 3 * 60_000, biteWindow: 8, biteNeed: 6, biteCooldownMs: 30_000 };
+  ? { biteWindow: 4, biteNeed: 3, biteCooldownMs: 10_000 }
+  : { biteWindow: 8, biteNeed: 6, biteCooldownMs: 30_000 };
 const DEFAULT_STAND_REMINDER_MINUTES = 45;
+// A stand-up is detected purely from shoulder displacement: once the
+// shoulders have risen this fraction of the frame height (0.5 = half the
+// screen) above wherever they were when we started tracking, regardless of
+// where that was, we count it as standing up.
+const STAND_SHOULDER_DISPLACEMENT = 0.5;
 
 const INITIAL_STATS = {
   present: false,
@@ -42,6 +47,11 @@ const initialTracking = () => ({
   breaks: 0,
   expectedStandups: 0,
   performedStandups: 0,
+  shoulderBaselineY: null,
+  // Whether shoulders were visible as of the last tick, so disappearing
+  // entirely (nobody in frame) can be detected as a one-time edge rather
+  // than re-triggering every tick for as long as they're gone.
+  personPresent: false,
 });
 
 export function useHabitMonitor() {
@@ -69,13 +79,20 @@ export function useHabitMonitor() {
     if (!v || !detectorsRef.current || v.readyState < 2) return;
     const now = Date.now();
     const s = st.current;
-    const { facePresent, handToMouth } = analyze(detectorsRef.current, v);
+    const { facePresent, handToMouth, shoulderY } = analyze(detectorsRef.current, v);
 
-    // Sitting time
+    // Sitting time: still driven by face presence, just to know whether
+    // someone's at their desk for the stand-reminder timer below.
     if (facePresent) {
       s.lastSeen = now;
       if (s.sittingStart === null) s.sittingStart = now;
-    } else if (s.sittingStart !== null && now - s.lastSeen > CFG.breakAfterMs) {
+    }
+
+    // Stand-up detection: triggered either by the shoulders rising half the
+    // frame height from wherever they were first tracked (absolute position
+    // doesn't matter, only displacement), or by nobody being detected at all
+    // (they likely walked out of frame, e.g. standing up and leaving).
+    const registerStandUp = () => {
       s.sittingStart = null;
       s.breaks += 1;
       s.performedStandups += 1;
@@ -87,6 +104,28 @@ export function useHabitMonitor() {
         recordPerformedStandup(sessionIdRef.current).catch((err) =>
           console.error('Failed to record performed standup', err),
         );
+      }
+    };
+
+    if (shoulderY === null) {
+      s.shoulderBaselineY = null; // lost tracking; re-lock once shoulders reappear
+      if (s.personPresent) {
+        // Edge: someone was there last tick and now nobody is detected at all.
+        s.personPresent = false;
+        registerStandUp();
+      }
+    } else {
+      s.personPresent = true;
+      // Track the lowest point in frame seen since the last trigger (bigger
+      // y = lower = more "sitting"), not just whatever the first sample was.
+      // Otherwise, right after a trigger the next sample is often still the
+      // standing position itself, which would permanently pin the baseline
+      // there and make a second stand-up mathematically impossible to detect.
+      s.shoulderBaselineY = s.shoulderBaselineY === null ? shoulderY : Math.max(s.shoulderBaselineY, shoulderY);
+      const displacement = s.shoulderBaselineY - shoulderY; // positive = moved up
+      if (displacement >= STAND_SHOULDER_DISPLACEMENT) {
+        s.shoulderBaselineY = shoulderY; // restart tracking from here; will ratchet down once they resettle
+        registerStandUp();
       }
     }
     const sittingMs = s.sittingStart ? now - s.sittingStart : 0;
