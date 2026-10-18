@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { DrawingUtils, PoseLandmarker } from '@mediapipe/tasks-vision'
 import { getPoseLandmarker } from '../lib/poseLandmarker'
 import {
@@ -7,6 +7,7 @@ import {
   computeMetrics,
   DEFAULT_BASELINE,
   slouchSignals,
+  thresholdsFor,
 } from '../lib/posture'
 
 // setTimeout instead of requestAnimationFrame so detection keeps running while
@@ -37,7 +38,14 @@ function loadBaseline() {
  * several detectors can share one webcam. Attach `canvasRef` to an overlay
  * <canvas> to see the skeleton.
  */
-export function usePostureDetection({ videoRef, enabled }) {
+export function usePostureDetection({ videoRef, enabled, tolerance = 'balanced' }) {
+  const thresholds = useMemo(() => thresholdsFor(tolerance), [tolerance])
+  // The detection loop reads this ref so a tolerance change applies immediately.
+  const thresholdsRef = useRef(thresholds)
+  useEffect(() => {
+    thresholdsRef.current = thresholds
+  }, [thresholds])
+
   const canvasRef = useRef(null)
   const recentMetrics = useRef([])
   const baselineRef = useRef(loadBaseline())
@@ -109,7 +117,7 @@ export function usePostureDetection({ videoRef, enabled }) {
       setMetrics(smoothed)
       setSignals(smoothed ? slouchSignals(smoothed, baseline) : null)
 
-      const next = classifyPosture(smoothed, baseline)
+      const next = classifyPosture(smoothed, baseline, thresholdsRef.current)
       candidateFrames = next === candidate ? candidateFrames + 1 : 1
       candidate = next
       // 'unknown' (nobody in frame) shows right away; other changes must hold.
@@ -161,6 +169,7 @@ export function usePostureDetection({ videoRef, enabled }) {
     status,
     metrics,
     signals,
+    thresholds,
     isCalibrated,
     calibrate,
   }

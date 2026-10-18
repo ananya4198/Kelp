@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
+import { notifyDesktop } from '../lib/desktopNotify';
 import { startCamera, stopCamera } from '../lib/camera';
 import { createDetectors, analyze } from '../lib/detectors';
 import {
@@ -153,6 +154,7 @@ export function useHabitMonitor() {
       s.bites += 1;
       win.current = [];
       toast('Stop biting your nails!');
+      notifyDesktop('Hands down 💅', 'Looks like you were biting your nails. Try a fidget instead!');
       if (sessionIdRef.current) {
         recordHabitEvent({ sessionId: sessionIdRef.current, habitType: 'nail_biting' })
           .then(notifyStatsChanged)

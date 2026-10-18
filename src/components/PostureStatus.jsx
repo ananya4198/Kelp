@@ -1,5 +1,3 @@
-import { THRESHOLDS } from '../lib/posture'
-
 const STATUS_STYLES = {
   good: { label: 'Good posture', className: 'bg-teal-300 text-teal-950' },
   slouching: { label: 'Slouching', className: 'bg-rose-400 text-rose-950' },
@@ -33,7 +31,7 @@ function Signal({ label, value, limit }) {
  * result and useCalibrationCountdown's result.
  */
 export default function PostureStatus({ posture, countdown }) {
-  const { state, error, status, metrics, signals, isCalibrated } = posture
+  const { state, error, status, metrics, signals, thresholds, isCalibrated } = posture
 
   if (state === 'idle') return null
   if (state === 'error') {
@@ -74,9 +72,9 @@ export default function PostureStatus({ posture, countdown }) {
 
       {metrics && signals && (
         <dl className="grid grid-cols-3 gap-3 text-xs text-cyan-100/70">
-          <Signal label="Head sinking" value={signals.neckDrop} limit={THRESHOLDS.neckDrop} />
-          <Signal label="Leaning in" value={signals.leanIn} limit={THRESHOLDS.leanIn} />
-          <Signal label="Head forward" value={signals.headForward} limit={THRESHOLDS.headForward} />
+          <Signal label="Head sinking" value={signals.neckDrop} limit={thresholds.neckDrop} />
+          <Signal label="Leaning in" value={signals.leanIn} limit={thresholds.leanIn} />
+          <Signal label="Head forward" value={signals.headForward} limit={thresholds.headForward} />
           <div>
             <dt>Shoulder tilt</dt>
             <dd className="font-mono text-white">{metrics.shoulderTiltDeg.toFixed(1)}°</dd>
