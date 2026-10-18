@@ -1,13 +1,17 @@
 import { useSyncExternalStore } from 'react'
+import { DEFAULT_TOLERANCE, TOLERANCE_SCALE } from './posture'
 
 // Client-side preferences (saved in this browser/Electron profile only), shared
 // live between the Dashboard settings card and the Live Session tab.
 const STORAGE_KEY = 'preferences'
-const DEFAULTS = { desktopNotifications: false, postureTolerance: 'balanced' }
+const DEFAULTS = { desktopNotifications: false, postureTolerance: DEFAULT_TOLERANCE }
 
 function load() {
   try {
-    return { ...DEFAULTS, ...JSON.parse(localStorage.getItem(STORAGE_KEY)) }
+    const saved = { ...DEFAULTS, ...JSON.parse(localStorage.getItem(STORAGE_KEY)) }
+    // Older saves may hold a tolerance that no longer exists (e.g. 'balanced').
+    if (!(saved.postureTolerance in TOLERANCE_SCALE)) saved.postureTolerance = DEFAULT_TOLERANCE
+    return saved
   } catch {
     return DEFAULTS
   }

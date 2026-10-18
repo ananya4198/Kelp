@@ -38,7 +38,7 @@ function loadBaseline() {
  * several detectors can share one webcam. Attach `canvasRef` to an overlay
  * <canvas> to see the skeleton.
  */
-export function usePostureDetection({ videoRef, enabled, tolerance = 'balanced' }) {
+export function usePostureDetection({ videoRef, enabled, tolerance }) {
   const thresholds = useMemo(() => thresholdsFor(tolerance), [tolerance])
   // The detection loop reads this ref so a tolerance change applies immediately.
   const thresholdsRef = useRef(thresholds)
@@ -88,7 +88,7 @@ export function usePostureDetection({ videoRef, enabled, tolerance = 'balanced' 
               const result = landmarker.detectForVideo(video, now)
               const landmarks = result.landmarks[0]
               handleFrame(landmarks)
-              if (drawer) drawPose(canvas, ctx, drawer, video, landmarks)
+              if (drawer) drawPose(canvas, ctx, drawer, video, landmarks, shownStatus)
             }
           }
           timer = setTimeout(tick, FRAME_INTERVAL_MS)
@@ -175,14 +175,34 @@ export function usePostureDetection({ videoRef, enabled, tolerance = 'balanced' 
   }
 }
 
-function drawPose(canvas, ctx, drawer, video, landmarks) {
+// Skeleton color per posture status, matching the status badge colors.
+const SKELETON_COLORS = {
+  good: '#5eead4', // teal
+  slouching: '#fb7185', // coral red
+  leaning: '#fcd34d', // yellow
+  unknown: '#94a3b8', // gray
+}
+
+function drawPose(canvas, ctx, drawer, video, landmarks, status) {
   if (canvas.width !== video.videoWidth) canvas.width = video.videoWidth
   if (canvas.height !== video.videoHeight) canvas.height = video.videoHeight
   ctx.clearRect(0, 0, canvas.width, canvas.height)
   if (!landmarks) return
+  const color = SKELETON_COLORS[status] ?? SKELETON_COLORS.unknown
+
+  // Soft neon glow around everything drawn below.
+  ctx.save()
+  ctx.shadowColor = color
+  ctx.shadowBlur = 14
   // Skip the face points (eyes, nose, mouth, ears) and only draw the body.
-  drawer.drawConnectors(landmarks, BODY_CONNECTIONS, { color: '#22d3ee', lineWidth: 3 })
-  drawer.drawLandmarks(landmarks.slice(FIRST_BODY_LANDMARK), { color: '#f97316', radius: 3 })
+  drawer.drawConnectors(landmarks, BODY_CONNECTIONS, { color, lineWidth: 5 })
+  drawer.drawLandmarks(landmarks.slice(FIRST_BODY_LANDMARK), {
+    color,
+    fillColor: '#fff7ed',
+    lineWidth: 3,
+    radius: 5,
+  })
+  ctx.restore()
 }
 
 // Pose landmarks 0-10 are the face; 11+ are shoulders, arms, hips and legs.

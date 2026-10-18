@@ -30,13 +30,15 @@ export const THRESHOLDS = {
   headOffset: 0.25,
 }
 
-// Posture tolerance setting: multiplies every threshold above. 'balanced' uses
-// THRESHOLDS as-is; 'gentle' allows more slouch/tilt before flagging (good if
-// you often glance down at desk notes); 'strict' flags smaller changes.
-export const TOLERANCE_SCALE = { gentle: 1.5, balanced: 1, strict: 0.7 }
+// Posture tolerance setting: multiplies every threshold above. 'gentle' allows
+// the most slouch/tilt before flagging (good if you often glance down at desk
+// notes); 'strict' flags smaller changes, but is still a bit looser than the
+// raw THRESHOLDS so normal fidgeting doesn't count.
+export const TOLERANCE_SCALE = { gentle: 2, strict: 1.3 }
+export const DEFAULT_TOLERANCE = 'gentle'
 
-export function thresholdsFor(tolerance = 'balanced') {
-  const scale = TOLERANCE_SCALE[tolerance] ?? 1
+export function thresholdsFor(tolerance = DEFAULT_TOLERANCE) {
+  const scale = TOLERANCE_SCALE[tolerance] ?? TOLERANCE_SCALE[DEFAULT_TOLERANCE]
   return Object.fromEntries(Object.entries(THRESHOLDS).map(([key, value]) => [key, value * scale]))
 }
 

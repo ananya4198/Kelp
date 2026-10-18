@@ -114,15 +114,15 @@ export default function GoodPostureChart() {
 
   return (
     <div className="glass w-full max-w-xl p-6">
-      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
-        <div>
+      <div className="mb-4 flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
           <h2 className="text-lg font-semibold text-white">Good Posture Minutes</h2>
           <p className="mt-1 text-sm text-cyan-100/70">
             {range === 'day' ? 'Minutes of good posture each hour today.' : 'Minutes of good posture each day.'}{' '}
             Total: <span className="font-semibold text-white">{formatMinutes(total)}</span>
           </p>
         </div>
-        <div className="flex shrink-0 rounded-xl border border-white/15 bg-white/5 p-1" role="tablist" aria-label="Time range">
+        <div className="flex shrink-0 rounded-lg border border-white/15 bg-white/5 p-0.5" role="tablist" aria-label="Time range">
           {RANGES.map((r) => {
             const selected = range === r.id
             return (
@@ -132,7 +132,7 @@ export default function GoodPostureChart() {
                 role="tab"
                 aria-selected={selected}
                 onClick={() => setRange(r.id)}
-                className={`rounded-lg px-4 py-1.5 text-sm font-medium transition-colors ${
+                className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
                   selected ? 'bg-white/10 text-teal-300' : 'text-cyan-100/70 hover:text-white'
                 }`}
               >

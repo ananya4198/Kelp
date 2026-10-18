@@ -4,7 +4,6 @@ import { setPreference, usePreferences } from '../lib/preferences'
 
 const TOLERANCES = [
   { id: 'gentle', label: 'Gentle' },
-  { id: 'balanced', label: 'Balanced' },
   { id: 'strict', label: 'Strict' },
 ]
 
