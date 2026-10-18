@@ -1,5 +1,6 @@
 import { useHabitMonitor } from '../hooks/useHabitMonitor';
 import { usePostureDetection } from '../hooks/usePostureDetection';
+import { usePostureLogger } from '../hooks/usePostureLogger';
 import PostureStatus from './PostureStatus';
 
 const fmt = (sec) => `${String(Math.floor(sec / 60)).padStart(2, '0')}:${String(sec % 60).padStart(2, '0')}`;
@@ -15,9 +16,11 @@ function Stat({ value, label, note }) {
 }
 
 export default function Monitor() {
-  const { videoRef, running, loading, error, stats, sitLimitSec, start, stop, paused, togglePause } = useHabitMonitor();
+  const { videoRef, running, loading, error, stats, sitLimitSec, start, stop, paused, togglePause, sessionId } =
+    useHabitMonitor();
   // Posture detection reuses the habit monitor's camera instead of opening its own.
   const posture = usePostureDetection({ videoRef, enabled: running });
+  usePostureLogger({ sessionId, status: posture.status });
   const { canvasRef: postureCanvasRef } = posture;
 
   return (

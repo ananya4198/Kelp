@@ -60,6 +60,8 @@ export function useHabitMonitor() {
   const [error, setError] = useState(null);
   const [paused, setPaused] = useState(false);
   const [stats, setStats] = useState(INITIAL_STATS);
+  // Shared with other per-session recorders (e.g. posture logging in Monitor).
+  const [sessionId, setSessionId] = useState(null);
 
   const tick = () => {
     const v = videoRef.current;
@@ -141,6 +143,7 @@ export function useHabitMonitor() {
       setSitLimitSec(minutes * 60);
       const session = await startSession();
       sessionIdRef.current = session.id;
+      setSessionId(session.id);
       timerRef.current = setInterval(tick, 1000);
       setRunning(true);
     } catch (e) {
@@ -158,6 +161,7 @@ export function useHabitMonitor() {
       endSession(sessionIdRef.current).catch((err) => console.error('Failed to end session', err));
       sessionIdRef.current = null;
     }
+    setSessionId(null);
     // Each session starts fresh: reset the sitting timer, breaks and alerts.
     st.current = initialTracking();
     setStats(INITIAL_STATS);
@@ -172,5 +176,5 @@ export function useHabitMonitor() {
 };
   useEffect(() => stop, []); // clean up on unmount
 
-  return { videoRef, running, loading, error, stats, sitLimitSec, start, stop, paused, togglePause };
+  return { videoRef, running, loading, error, stats, sitLimitSec, start, stop, paused, togglePause, sessionId };
 }

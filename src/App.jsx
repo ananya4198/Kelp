@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Toaster } from 'sonner'
 import Monitor from './components/Monitor'
 import Bubbles from './components/Bubbles'
+import StreakRow from './components/StreakRow'
 import { getProfile, getTodaySummary, updateProfile } from './lib/db'
 import { onStatsChanged } from './lib/statsBus'
 import healthyPet from '../pet_imgs/healthy.png'
@@ -147,7 +148,6 @@ function Dashboard() {
 
   const standPercent = clampPercent(today.stand_count, profile.stand_goal)
   const badHabitPercent = clampPercent(today.habit_event_count, 20)
-  const streakPercent = clampPercent(profile.current_streak, 7)
   const standupGap = today.expected_standups - today.performed_standups
   const petImage = petImageFor({ badHabits: today.habit_event_count, standupGap })
 
@@ -163,7 +163,7 @@ function Dashboard() {
         <div className="flex flex-col gap-6">
           <ProgressRow color="green" label="Good Habits Today" percent={standPercent} />
           <ProgressRow color="red" label="Bad Habits Today" percent={badHabitPercent} />
-          <ProgressRow color="yellow" label={`Streak ${profile.current_streak} 🔥`} percent={streakPercent} />
+          <StreakRow streak={profile.current_streak} />
         </div>
 
         <div className="mt-6 grid grid-cols-3 gap-3 text-center">

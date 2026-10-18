@@ -17,7 +17,7 @@ export const DEFAULT_BASELINE = { neckRatio: 0.5 }
 
 export const THRESHOLDS = {
   // Head sank toward the shoulders by this fraction of the baseline.
-  neckDrop: 0.10,
+  neckDrop: 0.09,
   // Smaller head drop that counts as slouching when combined with leaning in.
   neckDropWithLeanIn: 0.06,
   // Shoulders appear this much wider than baseline (you moved toward the screen).
