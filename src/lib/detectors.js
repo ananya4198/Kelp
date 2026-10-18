@@ -1,10 +1,16 @@
-import { FaceLandmarker, HandLandmarker } from '@mediapipe/tasks-vision';
+import { FaceLandmarker, HandLandmarker, PoseLandmarker } from '@mediapipe/tasks-vision';
 import { getVisionFileset } from './vision';
 
 const FACE_MODEL =
   'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task';
 const HAND_MODEL =
   'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task';
+// A separate instance from lib/poseLandmarker.js's shared singleton: that one
+// is driven by usePostureDetection's own rAF-less loop, and detectForVideo
+// requires strictly increasing timestamps per instance, so two independent
+// polling loops can't safely share one landmarker.
+const POSE_MODEL =
+  'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task';
 
 export async function createDetectors() {
   const vision = await getVisionFileset();
@@ -18,7 +24,12 @@ export async function createDetectors() {
     runningMode: 'VIDEO',
     numHands: 2,
   });
-  return { face, hands };
+  const pose = await PoseLandmarker.createFromOptions(vision, {
+    baseOptions: { modelAssetPath: POSE_MODEL },
+    runningMode: 'VIDEO',
+    numPoses: 1,
+  });
+  return { face, hands, pose };
 }
 
 const FINGERTIPS = [4, 8, 12, 16, 20];
@@ -27,13 +38,30 @@ const TIP_CLOSE = 0.15;   // fingertip must be very close to the lips
 const PALM_FAR = 0.3;     // palm must NOT be near the mouth (rules out resting on face)
 const WRIST_EXTRA = 0.3;  // wrist must be clearly farther than the fingertip
 
+const LEFT_SHOULDER = 11;
+const RIGHT_SHOULDER = 12;
+const SHOULDER_MIN_VISIBILITY = 0.5;
+
+// Normalized (0-1) average y of both shoulders, or null if either isn't
+// clearly visible. Independent of face detection, since standing up can
+// move the face out of frame before the shoulders follow.
+function shoulderY(poseLandmarks) {
+  const ls = poseLandmarks?.[LEFT_SHOULDER];
+  const rs = poseLandmarks?.[RIGHT_SHOULDER];
+  const visible = (lm) => lm && (lm.visibility ?? 1) >= SHOULDER_MIN_VISIBILITY;
+  if (!visible(ls) || !visible(rs)) return null;
+  return (ls.y + rs.y) / 2;
+}
+
 export function analyze(detectors, video) {
   const t = performance.now();
   const f = detectors.face.detectForVideo(video, t);
   const h = detectors.hands.detectForVideo(video, t);
+  const poseResult = detectors.pose.detectForVideo(video, t);
+  const shoulderYNow = shoulderY(poseResult.landmarks[0]);
 
   const face = f.faceLandmarks[0];
-  if (!face) return { facePresent: false, handToMouth: false };
+  if (!face) return { facePresent: false, handToMouth: false, shoulderY: shoulderYNow };
 
   const W = video.videoWidth;
   const H = video.videoHeight;
@@ -64,5 +92,5 @@ export function analyze(detectors, video) {
     // one or two fingertips only, palm away from face, hand angled toward the mouth
     if (tipsNear.length <= 2 && palmFar && wristFarther) biteLike = true;
   }
-  return { facePresent: true, handToMouth: biteLike };
+  return { facePresent: true, handToMouth: biteLike, shoulderY: shoulderYNow };
 }
