@@ -62,6 +62,11 @@ export function getDailySummaries({ from, to } = {}) {
   return requireDb().getDailySummaries({ from, to })
 }
 
+/** Good-posture seconds per local hour for `day` ('YYYY-MM-DD', default today). */
+export function getHourlyGoodPosture({ day } = {}) {
+  return requireDb().getHourlyGoodPosture({ day })
+}
+
 /** Today's counters (stand count, bad habit count, etc.), zeroed if no events yet. */
 export function getTodaySummary() {
   return requireDb().getTodaySummary()

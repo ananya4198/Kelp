@@ -157,6 +157,7 @@ function registerDbHandlers() {
   ipcMain.handle('db:getProfile', () => db.getProfile())
   ipcMain.handle('db:updateProfile', (_event, payload) => db.updateProfile(payload))
   ipcMain.handle('db:getDailySummaries', (_event, payload) => db.getDailySummaries(payload))
+  ipcMain.handle('db:getHourlyGoodPosture', (_event, payload) => db.getHourlyGoodPosture(payload))
   ipcMain.handle('db:getTodaySummary', () => db.getTodaySummary())
 }
 

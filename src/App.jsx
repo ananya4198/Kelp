@@ -4,6 +4,7 @@ import Monitor from './components/Monitor'
 import Bubbles from './components/Bubbles'
 import StreakRow from './components/StreakRow'
 import PreferencesCard from './components/PreferencesCard'
+import GoodPostureChart from './components/GoodPostureChart'
 import { getProfile, getTodaySummary, updateProfile } from './lib/db'
 import { onStatsChanged } from './lib/statsBus'
 import healthyPet from '../pet_imgs/healthy.png'
@@ -169,7 +170,9 @@ function Dashboard() {
 
         <div className="mt-6 grid grid-cols-3 gap-3 text-center">
           <div className="rounded-xl bg-white/10 p-3">
-            <div className="text-lg font-bold text-white"> Every {profile.stand_goal} minutes </div>
+            <div className="text-lg font-bold text-white">
+              Every {profile.stand_goal} {profile.stand_goal === 1 ? 'minute' : 'minutes'}
+            </div>
             <div className="text-xs text-cyan-100/70">Standing Goal</div>
           </div>
           <div className="rounded-xl bg-white/10 p-3">
@@ -188,6 +191,8 @@ function Dashboard() {
           </button>
         </div>
       </div>
+
+      <GoodPostureChart />
 
       <PreferencesCard />
 

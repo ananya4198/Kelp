@@ -15,6 +15,7 @@ contextBridge.exposeInMainWorld('electron', {
     getProfile: () => ipcRenderer.invoke('db:getProfile'),
     updateProfile: (payload) => ipcRenderer.invoke('db:updateProfile', payload),
     getDailySummaries: (range) => ipcRenderer.invoke('db:getDailySummaries', range),
+    getHourlyGoodPosture: (payload) => ipcRenderer.invoke('db:getHourlyGoodPosture', payload),
     getTodaySummary: () => ipcRenderer.invoke('db:getTodaySummary'),
   },
   standAlert: {

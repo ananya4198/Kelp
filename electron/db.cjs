@@ -251,6 +251,23 @@ function getDailySummaries({ from, to } = {}) {
     .all(fromDate, toDate)
 }
 
+/**
+ * Good-posture seconds per local hour for one day ('YYYY-MM-DD', default
+ * today), as [{ hour: 0-23, good_posture_seconds }]. Hours with none are omitted.
+ */
+function getHourlyGoodPosture({ day } = {}) {
+  return db
+    .prepare(
+      `select cast(strftime('%H', captured_at, 'localtime') as integer) as hour,
+              sum(sitting_seconds) as good_posture_seconds
+       from posture_snapshots
+       where posture_status = 'good' and date(captured_at, 'localtime') = ?
+       group by hour
+       order by hour`,
+    )
+    .all(day ?? todayLocal())
+}
+
 /** Today's counters, defaulting to zero if nothing has happened yet today. */
 function getTodaySummary() {
   const day = todayLocal()
@@ -282,5 +299,6 @@ module.exports = {
   getProfile,
   updateProfile,
   getDailySummaries,
+  getHourlyGoodPosture,
   getTodaySummary,
 }

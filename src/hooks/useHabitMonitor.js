@@ -101,9 +101,9 @@ export function useHabitMonitor() {
         .then(notifyStatsChanged)
         .catch((err) => console.error('Failed to record standup', err));
       if (sessionIdRef.current) {
-        recordPerformedStandup(sessionIdRef.current).catch((err) =>
-          console.error('Failed to record performed standup', err),
-        );
+        recordPerformedStandup(sessionIdRef.current)
+          .then(notifyStatsChanged)
+          .catch((err) => console.error('Failed to record performed standup', err));
       }
     };
 
@@ -140,9 +140,11 @@ export function useHabitMonitor() {
       s.expectedStandups += 1;
       showStandAlert();
       if (sessionIdRef.current) {
-        recordExpectedStandup(sessionIdRef.current).catch((err) =>
-          console.error('Failed to record expected standup', err),
-        );
+        // Refresh the Dashboard right away so the sea lion's mood reflects
+        // the missed stand-up immediately.
+        recordExpectedStandup(sessionIdRef.current)
+          .then(notifyStatsChanged)
+          .catch((err) => console.error('Failed to record expected standup', err));
       }
     }
 
